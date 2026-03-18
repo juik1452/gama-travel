@@ -359,11 +359,6 @@ if(typeof pdfjsLib!=='undefined'){
     <h1>上傳機票 PDF</h1>
   </div>
   <div style="padding:14px 14px 90px">
-    <!-- 出差目的：永遠顯示，上傳前即可填寫 -->
-    <div class="card">
-      <div class="ctitle">出差目的</div>
-      <input id="purp" class="inp" type="text" placeholder="例：參加展覽、客戶拜訪、技術交流" style="width:100%">
-    </div>
     <div class="card">
       <div class="ctitle">電子機票 PDF（可多選）</div>
       <div class="drop" id="dz" onclick="document.getElementById('fi').click()">
@@ -387,7 +382,7 @@ if(typeof pdfjsLib!=='undefined'){
         <div class="ctitle">補充資訊（選填，之後可再編輯）</div>
         <div style="display:grid;gap:10px">
           <div><label class="lbl">活動 / 出差事由</label><input id="ev" class="inp" type="text" placeholder="例：Google Next 2026"></div>
-          <div><label class="lbl">飯店名稱</label><input id="hn" class="inp" type="text" placeholder="例：紐約紐約大飯店"></div>
+          <div><label class="lbl">飯店名稱</label><input id="hn" class="inp" type="text" placeholder="例：紐約紐約大飯店（之後可在訂房頁修改）"></div>
           <div><label class="lbl">飯店費用 (TWD)</label><input id="hpr" class="inp" type="number" placeholder="例：49540"></div>
         </div>
       </div>
@@ -413,7 +408,7 @@ if(typeof pdfjsLib!=='undefined'){
     <button class="bs bp" style="padding:4px 12px;font-size:12px;white-space:nowrap" onclick="saveFromPreview()">儲存行程</button>
   </div>
   <div class="tabs" id="tabs">
-    <button class="tab on" data-t="tf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>航班</button>
+    <button class="tab on" data-t="tf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>行程</button>
     <button class="tab" data-t="tv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>簽證</button>
     <button class="tab" data-t="th"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M3 22V12a9 9 0 0 1 18 0v10"/><path d="M3 12h18"/><path d="M9 22V16h6v6"/></svg>訂房</button>
     <button class="tab" data-t="td"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>派車</button>
@@ -1269,11 +1264,34 @@ function dow(d){try{return['日','一','二','三','四','五','六'][new Date(d
 function rFlight(trip){
   var out=trip.segs.filter(function(s){return s.dir==='out';});
   var inb=trip.segs.filter(function(s){return s.dir==='in';});
-  var h='<div class="sh"><span>去程航班</span><span class="stag st-o">出發</span></div>';
+  // ── 出差目的卡片 ──
+  var purposeCard=
+    '<div class="card" style="margin-bottom:12px">'+
+      '<div class="ctitle" style="margin-bottom:8px">出差目的</div>'+
+      '<div style="display:flex;gap:8px;align-items:center">'+
+        '<input id="trip-purp" type="text" value="'+escHtml(trip.purpose||'')+'" '+
+          'placeholder="例：參加展覽、客戶拜訪、技術交流" '+
+          'style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;color:var(--text)">'+
+        '<button onclick="savePurpose(\''+trip.id+'\')" '+
+          'style="flex-shrink:0;padding:9px 16px;border-radius:8px;background:var(--pri);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">儲存</button>'+
+      '</div>'+
+    '</div>';
+  var h=purposeCard+'<div class="sh"><span>去程航班</span><span class="stag st-o">出發</span></div>';
   out.forEach(function(s){h+=fCard(s,'out');});
   if(inb.length){h+='<div class="sh"><span>回程航班</span><span class="stag st-i">返回</span></div>';}
   inb.forEach(function(s){h+=fCard(s,'in');});
-  document.getElementById('tf').innerHTML=h||'<p style="color:var(--muted);font-size:13px">尚無航班資料</p>';
+  document.getElementById('tf').innerHTML=h;
+}
+function savePurpose(tripId){
+  var val=(document.getElementById('trip-purp').value||'').trim();
+  var trips=getTrips();
+  var trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  trip.purpose=val;
+  addOrUpdateTrip(trip);
+  // 同步更新所有相關頁籤與儀表板
+  rFlight(trip); rVisa(trip); rReport(trip); renderDash();
+  toast('出差目的已儲存 ✓');
 }
 function fCard(s,dir){
   var nd=s.ad&&s.dd&&s.ad!==s.dd?'<div class="flbl" style="color:var(--warn)">+1日 '+s.ad+'</div>':'';
@@ -2590,7 +2608,7 @@ function resetUpload(){
   document.getElementById('fl').innerHTML='';
   document.getElementById('fcnt').textContent='';
   document.getElementById('ps').style.display='none';
-  ['ev','purp','hn','hpr'].forEach(function(id){document.getElementById(id).value='';});
+  ['ev','hn','hpr'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('fi').value='';
 }
 
@@ -3093,10 +3111,9 @@ function saveFromPreview(){
 function saveTrip(){
   if(!parsed){toast('請先上傳 PDF');return;}
   var ev=document.getElementById('ev').value.trim();
-  var purp=document.getElementById('purp').value.trim();
   var hn=document.getElementById('hn').value.trim();
   var hpr=document.getElementById('hpr').value.trim();
-  var newTrip=buildTripFromParsed(parsed,ev,purp,hn,hpr);
+  var newTrip=buildTripFromParsed(parsed,ev,'',hn,hpr);
   addOrUpdateTrip(newTrip);
   curId=newTrip.id;
   parsed=null;
