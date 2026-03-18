@@ -1153,7 +1153,7 @@ function renderDash(){
     var bl2=trip.status==='upcoming'?'即將出發':trip.status==='active'?'進行中':'已結束';
     h+='<div class="tc">'+
       '<div class="tc-hd"><div class="tc-flag">'+icn('plane',22,'#1e3560')+'</div><div>'+
-      '<div class="tc-dest">'+(trip.destination||trip.country||'—')+' <span class="badge '+bl+'">'+bl2+'</span></div>'+
+      '<div class="tc-dest">'+_tripDest(trip)+' <span class="badge '+bl+'">'+bl2+'</span></div>'+
       '<div class="tc-ev">'+(trip.purpose||trip.event||'')+'</div></div></div>'+
       '<div class="tc-dates">'+
       (out?'<span style="display:flex;align-items:center;gap:4px">'+icn('plane',12,'#8b94b5')+' 出發 '+out.dd+' '+out.dt+'</span>':'')+
@@ -1750,6 +1750,27 @@ function autoTranslateAddr(pName,chAddr,tripId){
   });
 }
 
+// 從航段反推目的地（舊資料 destination 為空時的 fallback）
+function _tripDest(trip){
+  var d=trip.destination||trip.country||'';
+  if(!d){
+    var out=(trip.segs||[]).filter(function(s){return s.dir==='out';});
+    var last=out[out.length-1];
+    if(last) d=guessCountry(last.ac)||(last.ac?last.ac:'');
+  }
+  return d||'—';
+}
+function saveHotelName(tripId){
+  var val=(document.getElementById('hotel-name-inp').value||'').trim();
+  if(!val){toast('請輸入飯店名稱');return;}
+  var trips=getTrips(), trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  if(!trip.hotel) trip.hotel={};
+  trip.hotel.name=val;
+  addOrUpdateTrip(trip);
+  toast('飯店名稱已儲存 ✓');
+  rHotel(trip);
+}
 function rHotel(trip){
   var h=trip.hotel||{};
   var destCode=trip.segs.filter(function(s){return s.dir==='out';}).pop();
@@ -1769,9 +1790,16 @@ function rHotel(trip){
       icn('hotel',16,'#fff')+' 選取確認單 PDF</button>'+
     '</div>';
 
-  // ── 已訂房資訊 ──
+  // ── 已訂房資訊（含可編輯飯店名稱）──
+  var badNames=['住宿名稱','尚未設定','hotel','property','飯店','酒店'];
+  var hotelNameOk=h.name&&badNames.indexOf(h.name.trim().toLowerCase())<0&&h.name.trim()!=='住宿名稱';
   html+='<div class="hc">'+
-    '<div class="hn">'+(h.name||'尚未設定')+'</div>'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
+      '<input id="hotel-name-inp" type="text" value="'+escHtml(hotelNameOk?h.name:'')+'" placeholder="請輸入飯店名稱" '+
+        'style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:15px;font-weight:700;font-family:inherit;color:var(--text);outline:none">'+
+      '<button onclick="saveHotelName(\''+trip.id+'\')" '+
+        'style="flex-shrink:0;padding:8px 14px;border-radius:8px;background:var(--pri);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">儲存</button>'+
+    '</div>'+
     '<div class="hm">'+
     (h.cin?'<span>入住 '+h.cin+'</span>':'')+
     (h.cout?'<span>退房 '+h.cout+'</span>':'')+
@@ -3357,7 +3385,7 @@ function buildReportText(trip){
   var numPax=trip.passengers.length;
   var totalUSD=billable*rate*numPax;
 
-  var dest=trip.destination||trip.country||'—';
+  var dest=_tripDest(trip);
   var lines=[
     '出差人員：'+trip.passengers.map(function(p){return p.name;}).join('、'),
     '出差地點：'+dest+(trip.flag&&trip.flag!=='✈️'?' '+trip.flag:''),
