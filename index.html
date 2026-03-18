@@ -1403,15 +1403,11 @@ function rVisa(trip){
         if(chA) rows+='<div>🏠 '+escHtml(chA)+'</div>';
         if(enA){
           rows+='<div style="color:#1e3560;font-weight:600">🌐 '+escHtml(enA)+'</div>';
+        } else if(chA){
+          // 有中文地址但無英文地址 → 顯示翻譯中佔位符，稍後自動翻譯
+          rows+='<div data-addr-loading="1" style="color:var(--muted);font-size:11px">🔄 英文地址翻譯中…</div>';
         } else {
-          rows+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px">'+
-            '<span style="color:var(--warn)">⚠ 英文地址未填</span>'+
-            (chA
-              ? '<button data-pname="'+escHtml(em.name)+'" data-addr="'+escHtml(chA)+'" data-tripid="'+trip.id+'" '+
-                  'onclick="autoTranslateAddr(this.dataset.pname,this.dataset.addr,this.dataset.tripid)" '+
-                  'style="padding:3px 9px;border-radius:6px;background:var(--pri);color:#fff;font-size:11px;border:none;cursor:pointer">🔄 自動翻譯</button>'
-              : '<span style="color:var(--muted)">→ 請先在員工頁籤填寫中文地址</span>')+
-          '</div>';
+          rows+='<div style="color:var(--warn);font-size:11px">⚠ 請在員工頁籤填寫地址</div>';
         }
         return rows;
       })()+
@@ -1422,6 +1418,11 @@ function rVisa(trip){
       '</div></div>';
   });
   document.getElementById('tv').innerHTML=h;
+  // 自動翻譯：有中文地址但無英文地址的旅客
+  trip.passengers.forEach(function(p){
+    var em=mergeEmpData(p);
+    if(em.addr&&!em.addrEn) autoTranslateAddr(em.name,em.addr,trip.id);
+  });
 }
 
 // ═══════════════════════════════════════
@@ -1692,13 +1693,12 @@ function setHotelCurrency(tripId,cur){
 
 // ── 簽證頁 — 中文地址自動翻譯成英文 ──
 function autoTranslateAddr(pName,chAddr,tripId){
-  if(!chAddr){toast('無中文地址可翻譯');return;}
-  toast('翻譯中…');
+  if(!chAddr) return;
   var url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-TW&tl=en&dt=t&q='+encodeURIComponent(chAddr);
   fetch(url).then(function(r){return r.json();}).then(function(data){
     var tr='';
     if(data&&data[0]) data[0].forEach(function(seg){if(seg&&seg[0]) tr+=seg[0];});
-    if(!tr){toast('翻譯失敗，請手動填寫');return;}
+    if(!tr) throw new Error('empty');
     // 存入員工DB
     var db=getEmpDB();
     if(db[pName]){db[pName].addrEn=tr;lsSet('gama_emp_db',db);}
@@ -1708,10 +1708,20 @@ function autoTranslateAddr(pName,chAddr,tripId){
       var pax=trip.passengers.find(function(px){return px.name===pName;});
       if(pax) pax.addrEn=tr;
       addOrUpdateTrip(trip);
-      rFlight(trip);rVisa(trip);rHotel(trip);rDispatch(trip);rTodo(trip);rEmployee(trip);rReport(trip);
+      rVisa(trip); rEmployee(trip); rReport(trip);
     }
-    toast('✅ 已翻譯：'+tr.slice(0,40)+(tr.length>40?'…':''));
-  }).catch(function(){toast('翻譯服務無法連線，請手動在員工頁籤填寫');});
+  }).catch(function(){
+    // 失敗：在簽證頁顯示重試按鈕
+    var tv=document.getElementById('tv');
+    if(!tv) return;
+    var loading=tv.querySelectorAll('[data-addr-loading]');
+    loading.forEach(function(el){
+      el.innerHTML='<span style="color:var(--danger);font-size:11px">翻譯失敗</span> '+
+        '<button data-pname="'+escHtml(pName)+'" data-addr="'+escHtml(chAddr)+'" data-tripid="'+tripId+'" '+
+        'onclick="autoTranslateAddr(this.dataset.pname,this.dataset.addr,this.dataset.tripid)" '+
+        'style="padding:2px 7px;border-radius:5px;background:var(--pri);color:#fff;font-size:11px;border:none;cursor:pointer">重試</button>';
+    });
+  });
 }
 
 function rHotel(trip){
