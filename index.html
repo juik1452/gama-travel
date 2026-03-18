@@ -1518,7 +1518,7 @@ function parseHotelConfirmation(text){
     ||t.match(/(?:你預訂了|您已預訂了|您的訂房|your stay at)\s+([^\n,，。]{4,60})/i);
   if(nmatch){
     var raw=nmatch[1].trim().replace(/\s+/g,' ')
-      .replace(/\s*(?:address|地址|addr\.|tel[.:\s]*[\d:]|電話|phone\s*:|fax|zip|郵遞區號|check[\-\s]?in|入住).*/i,'')
+      .replace(/\s*(?:address|地址|addr\.|tel\s*[:.]\s*\d|電話|phone\s*:|fax\s*:|zip\s*:|郵遞區號|check[\-\s]?in|入住).*/i,'')
       .replace(/[,，。:：].*/,'')
       .trim();
     if(raw.length>=3) r.name=raw;
@@ -1748,7 +1748,7 @@ function rHotel(trip){
 
   // ── 已訂房資訊 ──
   var cleanHotelName=(h.name||'尚未設定')
-    .replace(/\s*(?:address|地址|addr\.|tel[.:\s]*[\d:]|電話|phone\s*:|fax|zip|郵遞區號|check[\-\s]?in|入住).*/i,'')
+    .replace(/\s*(?:address|地址|addr\.|tel\s*[:.]\s*\d|電話|phone\s*:|fax\s*:|zip\s*:|郵遞區號|check[\-\s]?in|入住).*/i,'')
     .replace(/\s*[,，。:：]\s*\d.*$/,'')   // 截斷「: 數字開頭的地址」
     .trim()||'尚未設定';
   html+='<div class="hc">'+
