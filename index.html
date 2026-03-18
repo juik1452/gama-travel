@@ -299,6 +299,9 @@ if(typeof pdfjsLib!=='undefined'){
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 </script>
+<!-- Firebase SDK (Realtime Database) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -1063,6 +1066,149 @@ var MEM=null;
 function lsGet(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
 
+// ── Firebase 同步 ──────────────────────────────────────────
+var FB_CFG={
+  apiKey:"AIzaSyDemoKeyReplaceMeWithRealOne",
+  authDomain:"gama-travel-sync.firebaseapp.com",
+  databaseURL:"https://gama-travel-sync-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"gama-travel-sync"
+};
+var _fbApp=null, _fbDb=null, _fbRef=null, _fbListener=null, _fbSyncKey='';
+
+function _fbInit(){
+  if(_fbApp) return true;
+  try{
+    if(!firebase||!firebase.initializeApp) return false;
+    _fbApp=firebase.apps.length?firebase.apps[0]:firebase.initializeApp(FB_CFG);
+    _fbDb=firebase.database(_fbApp);
+    return true;
+  }catch(e){return false;}
+}
+
+function getSyncKey(){return lsGet('sync_key')||'';}
+function setSyncKey(k){lsSet('sync_key',k);}
+
+// 連線：輸入同步碼後呼叫
+function fbConnect(key){
+  key=(key||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(key.length<6){toast('同步碼至少 6 碼');return;}
+  if(!_fbInit()){toast('❌ Firebase 未初始化，請確認網路連線');return;}
+  _fbSyncKey=key;
+  setSyncKey(key);
+  _fbRef=_fbDb.ref('sync/'+key);
+  // 推送本機資料
+  _fbPush();
+  // 監聽遠端變更
+  if(_fbListener) _fbRef.off('value',_fbListener);
+  _fbListener=_fbRef.on('value',function(snap){
+    var remote=snap.val();
+    if(!remote||!remote.trips) return;
+    // 合併：以遠端為主，補上本機才有的
+    var localTrips=lsGet('gama_trips')||[];
+    var remoteTrips=remote.trips;
+    var remoteIds=new Set(remoteTrips.map(function(t){return t.id;}));
+    var localOnly=localTrips.filter(function(t){return !remoteIds.has(t.id);});
+    var merged=remoteTrips.concat(localOnly);
+    lsSet('gama_trips',merged);
+    MEM=null;
+    renderDash();
+    // 更新同步狀態顯示
+    var el=document.getElementById('sync-status');
+    if(el) el.textContent='✅ 已同步 '+new Date().toLocaleTimeString('zh-TW');
+  });
+  toast('✅ 已連線同步碼 '+key);
+  var el=document.getElementById('sync-status');
+  if(el) el.textContent='🔄 連線中…';
+}
+
+function fbDisconnect(){
+  if(_fbRef&&_fbListener){_fbRef.off('value',_fbListener);_fbListener=null;}
+  _fbRef=null; _fbSyncKey='';
+  setSyncKey('');
+  toast('已中斷同步');
+  var el=document.getElementById('sync-status');
+  if(el) el.textContent='未連線';
+  document.getElementById('sync-key-inp').value='';
+}
+
+// 推送本機資料到 Firebase
+function _fbPush(){
+  if(!_fbRef) return;
+  var trips=lsGet('gama_trips')||[];
+  _fbRef.set({trips:trips, updatedAt:Date.now()}).catch(function(e){
+    toast('同步失敗：'+e.message);
+  });
+}
+
+// 每次儲存行程後也推送
+var _origAddOrUpdateTrip=null;
+function _hookSync(){
+  if(_origAddOrUpdateTrip) return;
+  var orig=window.addOrUpdateTrip;
+  _origAddOrUpdateTrip=orig;
+  window.addOrUpdateTrip=function(trip){
+    orig(trip);
+    if(_fbRef) _fbPush();
+  };
+}
+
+// 匯出 JSON
+function exportData(){
+  var data={gama_trips:lsGet('gama_trips')||[],exportedAt:new Date().toISOString(),v:'1'};
+  var json=JSON.stringify(data,null,2);
+  var blob=new Blob([json],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='gama-travel-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✅ 資料已匯出');
+}
+
+// 匯入 JSON
+function importData(file){
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      var incoming=data.gama_trips||data.trips||[];
+      if(!incoming.length){toast('❌ 找不到行程資料');return;}
+      var existing=lsGet('gama_trips')||[];
+      var existingMap={};
+      existing.forEach(function(t){existingMap[t.id]=t;});
+      incoming.forEach(function(t){existingMap[t.id]=t;}); // 匯入覆蓋同 ID
+      var merged=Object.values(existingMap);
+      lsSet('gama_trips',merged);
+      MEM=null;
+      renderDash();
+      if(_fbRef) _fbPush();
+      toast('✅ 匯入完成，共 '+merged.length+' 筆行程');
+    }catch(err){toast('❌ 格式錯誤：'+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+// 生成隨機同步碼
+function genSyncKey(){
+  var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var key='';
+  for(var i=0;i<8;i++) key+=chars[Math.floor(Math.random()*chars.length)];
+  document.getElementById('sync-key-inp').value=key;
+}
+
+// 自動恢復上次的同步連線
+function autoReconnectSync(){
+  _hookSync();
+  var saved=getSyncKey();
+  if(saved){
+    var inp=document.getElementById('sync-key-inp');
+    if(inp) inp.value=saved;
+    setTimeout(function(){fbConnect(saved);},1500);
+  }
+}
+
 // ── 固定代辦事項（每次出差標準清單）──────────────────
 var DEFAULT_TODOS=[
   {id:'d1',text:'確認護照效期（6個月以上）',done:false},
@@ -1165,7 +1311,34 @@ function renderDash(){
       '<button class="bs bp" style="display:flex;align-items:center;gap:6px" onclick="cpRpt(\''+trip.id+'\')">'+icn('tag',14,'#fff')+' 複製報告</button>'+
       '</div></div>';
   });
+  // 同步卡片
+  var savedKey=getSyncKey();
+  h+='<div class="card" style="margin-top:16px">'+
+    '<div class="ctitle" style="display:flex;align-items:center;gap:6px">'+icn('plane',16,'#1a56db')+' 裝置同步</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">'+
+      '在所有裝置輸入相同同步碼，資料自動即時同步</div>'+
+    '<div style="display:flex;gap:6px;margin-bottom:8px">'+
+      '<input id="sync-key-inp" value="'+escHtml(savedKey)+'" placeholder="輸入或產生同步碼" maxlength="10"'+
+        ' style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit;letter-spacing:2px;text-transform:uppercase;outline:none">'+
+      '<button class="bs bo" onclick="genSyncKey()" style="white-space:nowrap">隨機產生</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:6px;margin-bottom:10px">'+
+      '<button class="bs bp" style="flex:1" onclick="fbConnect(document.getElementById(\'sync-key-inp\').value)">🔗 連線同步</button>'+
+      '<button class="bs bo" style="flex:1" onclick="fbDisconnect()">中斷</button>'+
+    '</div>'+
+    '<div id="sync-status" style="font-size:12px;color:var(--muted);margin-bottom:10px">'+
+      (savedKey?'上次同步碼：'+savedKey:'未連線')+
+    '</div>'+
+    '<div style="border-top:1px solid var(--border);padding-top:10px;display:flex;gap:6px">'+
+      '<button class="bs bo" style="flex:1;font-size:12px" onclick="exportData()">📤 匯出備份</button>'+
+      '<label class="bs bo" style="flex:1;font-size:12px;text-align:center;cursor:pointer">'+
+        '📥 匯入備份'+
+        '<input type="file" accept=".json" style="display:none" onchange="importData(this.files[0])">'+
+      '</label>'+
+    '</div>'+
+  '</div>';
   el.innerHTML=h;
+  autoReconnectSync();
 }
 function openTrip(id){
   curId=id;
