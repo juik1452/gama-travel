@@ -1,10 +1,10 @@
 // GAMA 差旅助手 Service Worker — 網路優先策略
-const CACHE_NAME = 'gama-travel-v6';
+const CACHE_NAME = 'gama-travel-v7';
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg'
+  '/gama-travel/',
+  '/gama-travel/index.html',
+  '/gama-travel/manifest.json',
+  '/gama-travel/icon.svg'
 ];
 
 self.addEventListener('install', function(e) {
@@ -41,7 +41,7 @@ self.addEventListener('fetch', function(e) {
     }).catch(function() {
       // 網路失敗（離線）時使用快取
       return caches.match(e.request).then(function(cached) {
-        return cached || caches.match('/index.html');
+        return cached || caches.match('/gama-travel/index.html');
       });
     })
   );

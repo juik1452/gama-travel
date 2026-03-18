@@ -2,7 +2,7 @@
   "name": "GAMA 差旅助手",
   "short_name": "差旅助手",
   "description": "GAMA TECHNOLOGY 出差行程管理工具",
-  "start_url": "/",
+  "start_url": "/gama-travel/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f0f4ff",
@@ -10,7 +10,7 @@
   "lang": "zh-TW",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "/gama-travel/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
