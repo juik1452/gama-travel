@@ -1396,9 +1396,25 @@ function rVisa(trip){
       '<div class="ii"><label>手機</label><span>'+(p.phone||'—')+'</span></div>'+
       '<div class="ii"><label>票號</label><span style="font-size:11px">'+(p.ticket||'—')+'</span></div>'+
       '</div><div style="margin-top:8px;font-size:12px;color:var(--muted)">'+
-      (p.addr?'<div>🏠 '+p.addr+'</div>':'')+
-      (p.addrEn?'<div style="color:#1e3560;font-weight:600">🌐 '+p.addrEn+'</div>':
-        '<div style="color:var(--warn)">⚠ 英文地址未填 → 請在員工頁籤編輯資料</div>')+
+      (function(){
+        var em=mergeEmpData(p);
+        var chA=em.addr||'', enA=em.addrEn||'';
+        var rows='';
+        if(chA) rows+='<div>🏠 '+escHtml(chA)+'</div>';
+        if(enA){
+          rows+='<div style="color:#1e3560;font-weight:600">🌐 '+escHtml(enA)+'</div>';
+        } else {
+          rows+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px">'+
+            '<span style="color:var(--warn)">⚠ 英文地址未填</span>'+
+            (chA
+              ? '<button data-pname="'+escHtml(em.name)+'" data-addr="'+escHtml(chA)+'" data-tripid="'+trip.id+'" '+
+                  'onclick="autoTranslateAddr(this.dataset.pname,this.dataset.addr,this.dataset.tripid)" '+
+                  'style="padding:3px 9px;border-radius:6px;background:var(--pri);color:#fff;font-size:11px;border:none;cursor:pointer">🔄 自動翻譯</button>'
+              : '<span style="color:var(--muted)">→ 請先在員工頁籤填寫中文地址</span>')+
+          '</div>';
+        }
+        return rows;
+      })()+
       '</div>'+
       '<div class="en-box"><div class="en-hd"><span class="en-title">🇺🇸 簽證申請英文資料</span>'+
       '<button class="cpb" onclick="cpText(document.getElementById(\''+enId+'\').textContent)">複製</button></div>'+
@@ -1444,7 +1460,7 @@ function _hcNormDate(s){
 // 從原始文字萃取訂房確認單的欄位
 function parseHotelConfirmation(text){
   var t=(text||'').replace(/\r/g,'\n');
-  var r={name:'',cin:'',cout:'',nights:0,price:0,ref:''};
+  var r={name:'',cin:'',cout:'',nights:0,price:0,ref:'',currency:'TWD'};
 
   // 日期 pattern（支援多種格式）
   var DR='(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[\\/ ](?:[A-Za-z]{3,9})[\\/ ]\\d{2,4}|[A-Za-z]{3,9}[\\/ ,]\\s*\\d{1,2},?\\s*\\d{4}|\\d{4}年\\d{1,2}月\\d{1,2}日|\\d{1,2}\\/\\d{1,2}\\/\\d{4})';
@@ -1470,9 +1486,26 @@ function parseHotelConfirmation(text){
     if(diff>0&&diff<90) r.nights=diff;
   }
 
-  // 總金額（優先找 Total/合計 行，再找 NTD/NT$ 數字）
-  var pm=t.match(/(?:total|grand total|合計|總(?:計|金額|價格?)|amount due)[^\n\d]{0,20}(?:NTD|NT\$|TWD|台幣|NTW)?\s*([0-9,]{3,10})/i)
-    ||t.match(/(?:NTD|NT\$|TWD|台幣)\s*([0-9,]{3,10})/i);
+  // 幣別偵測（優先從金額行附近掃描）
+  var CURR_RX=[
+    {re:/USD\s*[\d,]+|[\d,]+\s*USD/i,   cur:'USD'},
+    {re:/US\$\s*[\d,]+/i,               cur:'USD'},
+    {re:/JPY\s*[\d,]+|¥\s*[\d,]+|[\d,]+\s*円/i, cur:'JPY'},
+    {re:/KRW\s*[\d,]+|₩\s*[\d,]+|[\d,]+\s*KRW/i,cur:'KRW'},
+    {re:/EUR\s*[\d,]+|€\s*[\d,]+|[\d,]+\s*EUR/i, cur:'EUR'},
+    {re:/GBP\s*[\d,]+|£\s*[\d,]+|[\d,]+\s*GBP/i, cur:'GBP'},
+    {re:/THB\s*[\d,]+|฿\s*[\d,]+|[\d,]+\s*THB/i, cur:'THB'},
+    {re:/SGD\s*[\d,]+|S\$\s*[\d,]+|[\d,]+\s*SGD/i,cur:'SGD'},
+    {re:/MYR\s*[\d,]+|RM\s*[\d,]+|[\d,]+\s*MYR/i, cur:'MYR'},
+    {re:/HKD\s*[\d,]+|HK\$\s*[\d,]+|[\d,]+\s*HKD/i,cur:'HKD'},
+    {re:/AUD\s*[\d,]+|A\$\s*[\d,]+|[\d,]+\s*AUD/i, cur:'AUD'},
+    {re:/NTD\s*[\d,]+|NT\$\s*[\d,]+|TWD\s*[\d,]+|台幣\s*[\d,]+/i,cur:'TWD'}
+  ];
+  for(var ci=0;ci<CURR_RX.length;ci++){if(CURR_RX[ci].re.test(t)){r.currency=CURR_RX[ci].cur;break;}}
+
+  // 總金額（優先找 Total/合計 行，再找各幣別數字）
+  var pm=t.match(/(?:total|grand total|合計|總(?:計|金額|價格?)|amount due)[^\n\d]{0,30}(?:USD|JPY|KRW|EUR|GBP|THB|SGD|MYR|HKD|AUD|NTD|NT\$|TWD|台幣|S\$|HK\$|A\$|RM|US\$|¥|₩|€|£|฿)?\s*([0-9,]{2,12})/i)
+    ||t.match(/(?:USD|JPY|KRW|EUR|GBP|THB|SGD|MYR|HKD|AUD|NTD|NT\$|TWD|台幣|S\$|HK\$|A\$|RM)\s*([0-9,]{2,12})/i);
   if(pm) r.price=parseInt(pm[1].replace(/,/g,''),10)||0;
 
   // 訂房確認編號
@@ -1537,7 +1570,7 @@ function _showHotelConfirmPreview(tripId,parsed,rawText){
       {label:'入住日期',val:parsed.cin},
       {label:'退房日期',val:parsed.cout},
       {label:'住宿晚數',val:parsed.nights?(parsed.nights+' 晚'):''},
-      {label:'總金額',val:parsed.price?('NT$ '+Number(parsed.price).toLocaleString()):''},
+      {label:'總金額',val:parsed.price?(_currSymbol(parsed.currency||'TWD')+' '+Number(parsed.price).toLocaleString()+(parsed.currency&&parsed.currency!=='TWD'?' （'+parsed.currency+'）':'')):'' },
       {label:'訂房編號',val:parsed.ref}
     ].filter(function(row){return row.val;});
     card='<div class="card" style="border-left:4px solid var(--ok);margin-bottom:0">'+
@@ -1581,8 +1614,9 @@ function applyHotelConfirmation(tripId){
   if(parsed.cin)    trip.hotel.cin=parsed.cin;
   if(parsed.cout)   trip.hotel.cout=parsed.cout;
   if(parsed.nights) trip.hotel.nights=parsed.nights;
-  if(parsed.price)  trip.hotel.price=parsed.price;
-  if(parsed.ref)    trip.hotel.ref=parsed.ref;
+  if(parsed.price)    trip.hotel.price=parsed.price;
+  if(parsed.currency) trip.hotel.currency=parsed.currency;
+  if(parsed.ref)      trip.hotel.ref=parsed.ref;
   trip.hotel.booked=true;
   saveTrips();
   _pendingHotelData=null;
@@ -1641,6 +1675,45 @@ function hotelAgodaUrl(hotel,cin,cout,adults){
   var p='checkIn='+(cin||'')+'&los='+(cin&&cout?Math.round((new Date(cout)-new Date(cin))/864e5):1)+'&adults='+(adults||2)+'&rooms=1';
   return base+p;
 }
+// ── 幣別顯示輔助 ──
+var CURR_LIST=['TWD','USD','JPY','KRW','EUR','GBP','THB','SGD','MYR','HKD','AUD'];
+function _currSymbol(c){
+  return {TWD:'NT$',USD:'USD $',JPY:'¥',KRW:'₩',EUR:'€',GBP:'£',THB:'฿',SGD:'SGD',MYR:'RM',HKD:'HK$',AUD:'A$'}[c]||c||'NT$';
+}
+function setHotelCurrency(tripId,cur){
+  var trips=getTrips(), trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  if(!trip.hotel) trip.hotel={};
+  trip.hotel.currency=cur;
+  addOrUpdateTrip(trip);
+  toast('幣別已更新為 '+cur+' ✓');
+  rHotel(trip);
+}
+
+// ── 簽證頁 — 中文地址自動翻譯成英文 ──
+function autoTranslateAddr(pName,chAddr,tripId){
+  if(!chAddr){toast('無中文地址可翻譯');return;}
+  toast('翻譯中…');
+  var url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-TW&tl=en&dt=t&q='+encodeURIComponent(chAddr);
+  fetch(url).then(function(r){return r.json();}).then(function(data){
+    var tr='';
+    if(data&&data[0]) data[0].forEach(function(seg){if(seg&&seg[0]) tr+=seg[0];});
+    if(!tr){toast('翻譯失敗，請手動填寫');return;}
+    // 存入員工DB
+    var db=getEmpDB();
+    if(db[pName]){db[pName].addrEn=tr;lsSet('gama_emp_db',db);}
+    // 存入行程旅客
+    var trips=getTrips(), trip=trips.find(function(t){return t.id===tripId;});
+    if(trip){
+      var pax=trip.passengers.find(function(px){return px.name===pName;});
+      if(pax) pax.addrEn=tr;
+      addOrUpdateTrip(trip);
+      rFlight(trip);rVisa(trip);rHotel(trip);rDispatch(trip);rTodo(trip);rEmployee(trip);rReport(trip);
+    }
+    toast('✅ 已翻譯：'+tr.slice(0,40)+(tr.length>40?'…':''));
+  }).catch(function(){toast('翻譯服務無法連線，請手動在員工頁籤填寫');});
+}
+
 function rHotel(trip){
   var h=trip.hotel||{};
   var destCode=trip.segs.filter(function(s){return s.dir==='out';}).pop();
@@ -1668,7 +1741,14 @@ function rHotel(trip){
     (h.cout?'<span>退房 '+h.cout+'</span>':'')+
     (h.nights?'<span>'+h.nights+' 晚</span>':'')+
     '</div>'+
-    (h.price?'<div class="hp">NT$ '+Number(h.price).toLocaleString()+'<small> / '+adults+' 人</small></div>':'')+
+    (h.price?'<div class="hp" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+      '<span>'+_currSymbol(h.currency||'TWD')+' '+Number(h.price).toLocaleString()+'</span>'+
+      '<small style="color:var(--muted)">/ '+adults+' 人</small>'+
+      '<select onchange="setHotelCurrency(\''+trip.id+'\',this.value)" '+
+        'style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 6px;color:var(--text);background:#fff;cursor:pointer">'+
+        CURR_LIST.map(function(c){return '<option value="'+c+'"'+((h.currency||'TWD')===c?' selected':'')+'>'+c+'</option>';}).join('')+
+      '</select>'+
+    '</div>':'')+
     '<div class="hs '+(h.booked?'ok':'ng')+'">'+(h.booked?'已確認訂房':'訂房進行中')+'</div>'+
     '</div>';
 
@@ -2970,7 +3050,7 @@ function buildTripFromParsed(d,eventName,hotelName,hotelPrice){
     event:eventName||d.destination,status:'upcoming',
     passengers:resolvedPax,ref:d.ref,segs:d.segs,
     hotel:{name:hotelName||'尚未設定',nights:nights,cin:fc?fc.dd:'',cout:lc?lc.dd:'',
-      price:hotelPrice?Number(hotelPrice):0,booked:!!hotelName},
+      price:hotelPrice?Number(hotelPrice):0,currency:'TWD',booked:!!hotelName},
     todos:DEFAULT_TODOS.map(function(t){return {id:t.id,text:t.text,done:false};}),
     personalDays:[],
     sheetsUrl:'https://docs.google.com/spreadsheets/d/15fjQ_oQKwLlR8dYKsIjADKDO3hNJD5Ier77JNt1glEk/edit#gid=47702322'
@@ -3327,7 +3407,7 @@ function buildReportText(trip){
   var h=trip.hotel||{};
   if(h.name){
     lines.push('【飯店住宿】');
-    lines.push('  '+h.name+'  '+( h.cin||'')+'～'+(h.cout||'')+'  NT$ '+Number(h.price||0).toLocaleString());
+    lines.push('  '+h.name+'  '+(h.cin||'')+'～'+(h.cout||'')+'  '+_currSymbol(h.currency||'TWD')+' '+Number(h.price||0).toLocaleString()+(h.nights?' （'+h.nights+' 晚）':''));
     lines.push('');
   }
 
