@@ -359,6 +359,11 @@ if(typeof pdfjsLib!=='undefined'){
     <h1>上傳機票 PDF</h1>
   </div>
   <div style="padding:14px 14px 90px">
+    <!-- 出差目的：永遠顯示，上傳前即可填寫 -->
+    <div class="card">
+      <div class="ctitle">出差目的</div>
+      <input id="purp" class="inp" type="text" placeholder="例：參加展覽、客戶拜訪、技術交流" style="width:100%">
+    </div>
     <div class="card">
       <div class="ctitle">電子機票 PDF（可多選）</div>
       <div class="drop" id="dz" onclick="document.getElementById('fi').click()">
@@ -382,7 +387,6 @@ if(typeof pdfjsLib!=='undefined'){
         <div class="ctitle">補充資訊（選填，之後可再編輯）</div>
         <div style="display:grid;gap:10px">
           <div><label class="lbl">活動 / 出差事由</label><input id="ev" class="inp" type="text" placeholder="例：Google Next 2026"></div>
-          <div><label class="lbl">出差目的</label><input id="purp" class="inp" type="text" placeholder="例：參加展覽、客戶拜訪、技術交流"></div>
           <div><label class="lbl">飯店名稱</label><input id="hn" class="inp" type="text" placeholder="例：紐約紐約大飯店"></div>
           <div><label class="lbl">飯店費用 (TWD)</label><input id="hpr" class="inp" type="number" placeholder="例：49540"></div>
         </div>
