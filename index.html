@@ -1320,40 +1320,35 @@ function buildVisaEn(p,trip){
     'HOME ADDRESS           : '+addr,
   ].join('\n');
 }
-function rVisa(trip){
-  var country=trip.country||'';
+function _visaCard(country,isTransit){
   var db=VISA_DB[country]||VISA_DEFAULT;
   var statusCls={'ok':'visa-ok','warn':'visa-warn','info':'visa-info'}[db.status]||'visa-info';
-
-  // Hero banner
-  var visaIconSvg=db.status==='ok'?icn('check',24,'#065f46'):icn('plane',24,'#92400e');
-  var h='<div class="visa-hero '+statusCls+'" style="display:flex;align-items:center;gap:10px">'+
-    visaIconSvg+
-    '<div style="flex:1">'+
-      '<div style="font-weight:700;font-size:15px">'+country+'</div>'+
-      '<div style="font-size:14px;margin-top:2px">'+db.title+'</div>'+
-    '</div>'+
-  '</div>';
-
-  // 簽證規定 card
+  var icon=db.status==='ok'?icn('check',20,'#065f46'):icn('plane',20,'#92400e');
+  var label=isTransit
+    ?'<div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px">✈ 轉機地</div>'
+    :'<div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:6px">📍 目的地</div>';
+  var h=label;
+  h+='<div class="visa-hero '+statusCls+'" style="display:flex;align-items:center;gap:10px">'+
+    icon+'<div style="flex:1">'+
+      '<div style="font-weight:700;font-size:15px">'+(country?cFlag(country)+' '+country:'目的地未偵測')+
+        (isTransit?'<span style="font-size:11px;font-weight:400;opacity:.7;margin-left:6px">（過境）</span>':'')+
+      '</div>'+
+      '<div style="font-size:13px;margin-top:2px">'+db.title+'</div>'+
+    '</div></div>';
   h+='<div class="card" style="margin-top:0">'+
     '<div class="ctitle">簽證規定</div>'+
-    '<div style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:10px">'+
-      (db.visaReq||db.title)+'</div>'+
+    (isTransit?'<div style="font-size:12px;background:#fef3c7;color:#92400e;border-radius:6px;padding:7px 10px;margin-bottom:8px">⚠ 以下為一般入境規定。台灣護照在多數國家可免辦過境簽，但建議出發前確認最新規定。</div>':'')+
+    '<div style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:10px">'+(db.visaReq||db.title)+'</div>'+
     '<div class="ig" style="margin-bottom:10px">'+
       '<div class="ii"><label>可停留天數</label><span style="font-weight:700">'+db.duration+'</span></div>'+
       '<div class="ii"><label>簽證費用</label><span style="font-weight:700">'+db.fee+'</span></div>'+
       (db.validity&&db.validity!=='—'?'<div class="ii"><label>簽證有效期</label><span>'+db.validity+'</span></div>':'')+
     '</div>'+
-    (db.applyUrl?'<a class="visa-link" href="'+db.applyUrl+'" target="_blank" style="display:inline-block;margin-bottom:10px">🔗 '+( db.applyLabel||'線上申請')+'</a>':'')+
+    (db.applyUrl?'<a class="visa-link" href="'+db.applyUrl+'" target="_blank" style="display:inline-block;margin-bottom:8px">🔗 '+(db.applyLabel||'線上申請')+'</a>':'')+
   '</div>';
-
-  // 入境規定 card
-  h+='<div class="card" style="margin-top:0">'+
-    '<div class="ctitle">入境規定</div>';
+  h+='<div class="card" style="margin-top:0"><div class="ctitle">入境規定</div>';
   if(db.entryReq&&db.entryReq.length){
-    h+='<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">必備文件 / 入境條件</div>'+
-      '<ul class="visa-req">';
+    h+='<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">必備文件 / 入境條件</div><ul class="visa-req">';
     db.entryReq.forEach(function(r){h+='<li>'+r+'</li>';});
     h+='</ul>';
   }
@@ -1362,11 +1357,28 @@ function rVisa(trip){
     db.notes.forEach(function(n){h+='<div style="margin-bottom:4px">⚠ '+n+'</div>';});
     h+='</div>';
   }
-  h+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">';
-  if(db.mofaUrl){
-    h+='<a class="visa-link" href="'+db.mofaUrl+'" target="_blank">🏛 外交部領事事務局</a>';
-  }
-  h+='</div></div>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'+
+    (db.mofaUrl?'<a class="visa-link" href="'+db.mofaUrl+'" target="_blank">🏛 外交部領事事務局</a>':'')+
+  '</div></div>';
+  return h;
+}
+
+function rVisa(trip){
+  var segs=trip.segs||[];
+  var destCountry=trip.country||'';
+
+  // 收集所有非台灣國家（目的地＋轉機地）
+  var seen={};
+  var countries=[]; // [{country, isTransit}]
+  if(destCountry){seen[destCountry]=true;countries.push({country:destCountry,isTransit:false});}
+  segs.forEach(function(s){
+    var c=guessCountry(s.ac);
+    if(c&&c!=='台灣'&&!seen[c]){seen[c]=true;countries.push({country:c,isTransit:true});}
+  });
+  if(!countries.length) countries.push({country:'',isTransit:false});
+
+  var h='';
+  countries.forEach(function(item){h+=_visaCard(item.country,item.isTransit);});
 
   // Per-passenger section
   trip.passengers.forEach(function(p,pi){
@@ -2802,12 +2814,48 @@ function parseTicket(txt){
     }
   }
 
+  // ── 方法三：寬鬆格式（ICN TPE 14MAY26 09:35 11:45 OZ712）──
+  if(res.segs.length===0){
+    var sp3=[...t.matchAll(/\b([A-Z]{3})\s+([A-Z]{3})\s+(\d{2}[A-Z]{3}\d{2,4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s+((?:[A-Z]{2}|[A-Z0-9]{2})\s*\d{1,4})/g)];
+    sp3.forEach(function(m){
+      var dd=normDate(m[3]);
+      res.segs.push({dir:segDir(m[1],m[2]),fl:m[6].replace(/\s/g,''),
+        dd:dd,dc:m[1],dt:m[4],ac:m[2],at:m[5],
+        dct:m[1],act:m[2],ad:dd,dterm:'',aterm:'',ac2:'',dur:'',cab:'',bag:''});
+    });
+  }
+
+  // ── 方法四：CI/BR/OZ 常見「FROM - TO」格式──
+  if(res.segs.length===0){
+    var sp4=[...t.matchAll(/([A-Z]{3})\s*[-–→]\s*([A-Z]{3})[^\n]{0,80}?(\d{2}[A-Z]{3}\d{2,4})[^\n]{0,60}?(\d{1,2}:\d{2})[^\n]{0,40}?(\d{1,2}:\d{2})/g)];
+    sp4.forEach(function(m){
+      if(m[1]===m[2]) return;
+      var dd=normDate(m[3]);
+      res.segs.push({dir:segDir(m[1],m[2]),fl:'',
+        dd:dd,dc:m[1],dt:m[4],ac:m[2],at:m[5],
+        dct:m[1],act:m[2],ad:dd,dterm:'',aterm:'',ac2:'',dur:'',cab:'',bag:''});
+    });
+  }
+
+  // ── 方法五：只有機場代碼對 TPE-NRT 純文字格式──
+  if(res.segs.length===0){
+    var sp5=[...t.matchAll(/\b([A-Z]{3})-([A-Z]{3})\b/g)];
+    sp5.forEach(function(m){
+      if(m[1]===m[2]) return;
+      if(guessCountry(m[1])===''&&guessCountry(m[2])==='') return; // 濾掉無效代碼
+      res.segs.push({dir:segDir(m[1],m[2]),fl:'',
+        dd:'',dc:m[1],dt:'',ac:m[2],at:'',
+        dct:m[1],act:m[2],ad:'',dterm:'',aterm:'',ac2:'',dur:'',cab:'',bag:''});
+    });
+  }
+
   // 依日期排序（確保去程在前）
   res.segs.sort(function(a,b){return (a.dd+a.dt).localeCompare(b.dd+b.dt);});
 
+  // 最終目的地：取最遠的去程抵達地
   if(res.segs.length>0){
-    var lo=res.segs.filter(function(s){return s.dir==='out';}).pop();
-    if(!lo) lo=res.segs[0]; // fallback：沒找到台灣出發段，用第一段
+    var outSegs=res.segs.filter(function(s){return s.dir==='out';});
+    var lo=outSegs.length?outSegs[outSegs.length-1]:res.segs[0];
     if(lo){res.destination=lo.ac;res.country=guessCountry(lo.ac);res.flag=cFlag(res.country);}
   }
   return res;
