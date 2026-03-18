@@ -1,0 +1,3045 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="color-scheme" content="light">
+<title>GAMA 差旅助手</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1e3560">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="差旅助手">
+<link rel="apple-touch-icon" href="/icon.svg">
+<style>
+/* ════════════════════════════════════
+   INSIGHTLANCER STYLE — Navy × White
+   ════════════════════════════════════ */
+:root{
+  color-scheme:light;
+  --pri:#1e3560;--pri-d:#162848;--pri-l:#eef1f8;
+  --ok:#16a34a;--warn:#d97706;--danger:#dc2626;
+  --bg:#f5f7fb;--card:#ffffff;--border:#eaecf4;--text:#1a2035;
+  --muted:#8b94b5;--sh:0 4px 24px rgba(30,53,96,.09);--r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button{cursor:pointer;border:none;background:none;font-family:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+
+.scr{display:none!important}
+.scr.on{display:flex!important;flex-direction:column;min-height:100vh}
+
+/* ── TOP BAR ── */
+.top{background:#fff;color:var(--text);padding:14px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 var(--border)}
+.top h1{font-size:17px;font-weight:800;flex:1;color:var(--text)}
+.top-btn{background:var(--bg);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--text);flex-shrink:0;border:1px solid var(--border)}
+.back{font-size:15px;color:var(--pri);padding:4px 0;display:flex;align-items:center;gap:4px;font-weight:600}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:18px;margin-bottom:14px}
+.ctitle{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+
+/* ── DASHBOARD HERO ── */
+.hero{background:var(--pri);border-radius:var(--r);padding:22px 20px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;right:-30px;top:-30px;width:140px;height:140px;background:rgba(255,255,255,.06);border-radius:50%}
+.hero::after{content:'';position:absolute;right:30px;bottom:-50px;width:110px;height:110px;background:rgba(255,255,255,.04);border-radius:50%}
+.hero h2{font-size:22px;font-weight:800;margin-bottom:6px;position:relative}
+.hero p{font-size:13px;opacity:.75;position:relative}
+
+/* ── TRIP CARDS ── */
+.tc{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:18px;margin-bottom:14px;border:1px solid var(--border);transition:transform .15s,box-shadow .15s}
+.tc:active{transform:translateY(1px);box-shadow:0 2px 10px rgba(30,53,96,.06)}
+.tc-hd{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.tc-flag{font-size:28px;line-height:1;width:48px;height:48px;background:var(--pri-l);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tc-dest{font-size:17px;font-weight:800;color:var(--text)}
+.tc-ev{font-size:12px;color:var(--muted);margin-top:3px}
+.badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px}
+.b-up{background:#dbeafe;color:#1d4ed8}
+.b-ac{background:#d1fae5;color:#065f46}
+.b-ps{background:#f3f4f6;color:#6b7280}
+.tc-dates{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;gap:12px;flex-wrap:wrap}
+.tc-pax{font-size:12px;background:var(--bg);border-radius:10px;padding:7px 12px;margin-bottom:12px;border:1px solid var(--border)}
+.tc-acts{display:flex;gap:8px;flex-wrap:wrap}
+.bs{font-size:13px;font-weight:700;padding:9px 18px;border-radius:var(--rs)}
+.bp{background:var(--pri);color:#fff}
+.bo{background:#fff;color:var(--pri);border:1.5px solid var(--pri)}
+.bd{background:var(--danger);color:#fff}
+.bs:active{opacity:.8}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:24px;right:20px;background:var(--pri);color:#fff;border-radius:50%;width:60px;height:60px;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(30,53,96,.35);z-index:200}
+.fab:active{transform:scale(.93)}
+
+/* UPLOAD */
+.drop{border:2px dashed var(--border);border-radius:var(--r);padding:36px 20px;text-align:center;background:var(--pri-l);cursor:pointer;transition:background .15s}
+.drop.drag{background:#dbe4f5}
+.drop .ico{font-size:44px;margin-bottom:12px}
+.drop h3{font-size:15px;font-weight:700;color:var(--pri);margin-bottom:6px}
+.drop p{font-size:12px;color:var(--muted)}
+#fi{display:none}
+.fi-item{background:var(--card);border-radius:var(--rs);padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);margin-bottom:8px;border:1px solid var(--border)}
+.fi-name{flex:1;font-size:13px;font-weight:600;word-break:break-all}
+.fi-st{font-size:11px;color:var(--muted)}
+.pr-bar{height:5px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:6px}
+.pr-fill{height:100%;background:var(--pri);border-radius:4px;transition:width .3s}
+.inp{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:14px;background:var(--card);color:var(--text);outline:none;transition:border .2s}
+.inp:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(30,53,96,.08)}
+.lbl{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;font-weight:600}
+.bf{width:100%;padding:15px;font-size:15px;font-weight:700;border-radius:var(--rs);margin-top:8px}
+.bf:active{opacity:.8}
+.fcnt{font-size:12px;color:var(--pri);font-weight:700;text-align:center;margin-top:8px;min-height:18px}
+.draft-banner{background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--rs);padding:12px 16px;font-size:13px;color:#92400e;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+/* ── DETAIL HERO ── */
+.dhero{background:var(--pri);color:#fff;padding:22px 18px 28px;position:relative;overflow:hidden}
+.dhero::before{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:rgba(255,255,255,.06);border-radius:50%}
+.dhero h2{font-size:22px;font-weight:800;position:relative}
+.dhero .sub{font-size:13px;opacity:.75;margin-top:4px;position:relative}
+.dhero .meta{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;position:relative}
+.dhero .mi{font-size:12px;opacity:.9;background:rgba(255,255,255,.12);padding:4px 10px;border-radius:6px}
+
+/* ── TABS ── */
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;position:sticky;top:53px;z-index:90}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:12px 16px;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2.5px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s}
+.tab.on{color:var(--pri);border-bottom-color:var(--pri)}
+.tc2{display:none;padding:16px}
+.tc2.on{display:block}
+
+/* ── FLIGHT ── */
+.fc{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:14px;overflow:hidden;border:1px solid var(--border)}
+.fc-hd{background:var(--pri);color:#fff;padding:10px 16px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
+.fc-bd{padding:16px}
+.fn{font-size:17px;font-weight:800;color:var(--pri)}
+.fact{font-size:11px;color:var(--muted);background:var(--bg);padding:3px 8px;border-radius:6px;margin-left:6px}
+.ftimes{display:flex;align-items:center;gap:8px;margin-top:12px}
+.fep{flex:1;text-align:center}
+.fep .code{font-size:22px;font-weight:800}
+.fep .ftime{font-size:16px;font-weight:700;color:var(--pri)}
+.fep .flbl{font-size:11px;color:var(--muted)}
+.farr{display:flex;flex-direction:column;align-items:center;gap:2px}
+.fdur{font-size:11px;color:var(--muted)}
+.fline{height:2px;width:56px;background:var(--border);position:relative}
+.fline::after{content:'▶';position:absolute;right:-8px;top:-7px;color:var(--muted);font-size:11px}
+.fft{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--muted)}
+.fft span{background:var(--bg);padding:3px 8px;border-radius:6px;border:1px solid var(--border)}
+.sh{display:flex;align-items:center;gap:8px;margin:16px 0 10px}
+.sh span{font-size:15px;font-weight:800}
+.stag{font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px}
+.st-o{background:#dbeafe;color:#1d4ed8}
+.st-i{background:#d1fae5;color:#065f46}
+
+/* VISA */
+.pc{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:14px;border:1px solid var(--border);overflow:hidden}
+.ph{padding:14px 16px;background:var(--pri-l);border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;gap:12px}
+.pav{width:40px;height:40px;background:var(--pri);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0}
+.pn{font-size:15px;font-weight:800}
+.pen{font-size:11px;color:var(--muted)}
+.pb{padding:16px}
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ii label{font-size:10px;color:var(--muted);display:block;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.ii span{font-size:13px;font-weight:700}
+.vs{display:flex;align-items:center;gap:6px;margin-top:10px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:700}
+.vs-r{background:#fef3c7;color:#92400e}
+.vs-ok{background:#d1fae5;color:#065f46}
+.en-box{background:var(--pri-l);border:1px solid var(--border);border-radius:var(--rs);padding:14px;margin-top:12px}
+.en-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.en-title{font-size:11px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.06em}
+.en-data{font-family:monospace;font-size:12px;line-height:1.9;white-space:pre-wrap;color:var(--text)}
+
+/* HOTEL */
+.hc{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:18px;margin-bottom:14px;border:1px solid var(--border)}
+.hn{font-size:18px;font-weight:800;margin-bottom:8px}
+.hm{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.hm span{font-size:12px;color:var(--muted);background:var(--bg);padding:4px 12px;border-radius:8px;border:1px solid var(--border)}
+.hp{font-size:24px;font-weight:800;color:var(--pri)}
+.hp small{font-size:13px;color:var(--muted);font-weight:400}
+.hs{margin-top:10px;font-size:13px;font-weight:700}
+.hs.ok{color:var(--ok)}.hs.ng{color:var(--warn)}
+.htbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:12px}
+.htbl{width:100%;border-collapse:collapse;font-size:12px;min-width:580px}
+.htbl th{background:var(--pri);color:#fff;padding:10px 12px;text-align:left;font-weight:700;white-space:nowrap}
+.htbl td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.htbl tr:hover td{background:var(--pri-l)}
+.htbl .score{font-weight:700;color:var(--ok)}
+.htbl .score-warn{font-weight:700;color:var(--warn)}
+.htbl .price-cell{font-weight:700;color:var(--pri);white-space:nowrap}
+.htbl .link-cell a{background:var(--pri);color:#fff;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;display:inline-block}
+.htbl .pros{color:var(--ok)}.htbl .cons{color:var(--danger)}
+.room-info{background:var(--bg);border-radius:var(--rs);padding:12px 14px;font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;border:1px solid var(--border)}
+.room-info b{color:var(--text)}
+
+/* VISA DB */
+.visa-hero{border-radius:var(--rs);padding:13px 16px;margin-bottom:10px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.visa-ok{background:#d1fae5;color:#065f46}.visa-warn{background:#fef3c7;color:#92400e}.visa-info{background:#dbeafe;color:#1e40af}
+.visa-req{background:var(--bg);border-radius:var(--rs);padding:12px 14px;margin-top:8px;font-size:12px;line-height:1.9;border:1px solid var(--border)}
+.visa-req li{list-style:none;padding-left:2px}.visa-req li::before{content:'• ';color:var(--pri)}
+.visa-notes{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.7}
+.visa-link{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:7px 14px;background:var(--pri);color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none}
+
+/* EMPLOYEE */
+.ep-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:14px;overflow:hidden;border:1px solid var(--border)}
+.ep-hd{background:var(--pri);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.ep-av{width:44px;height:44px;background:rgba(255,255,255,.2);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;flex-shrink:0}
+.ep-name{color:#fff;font-weight:800;font-size:16px}.ep-en{color:rgba(255,255,255,.7);font-size:11px;margin-top:3px}
+.ep-bd{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ep-item{display:flex;flex-direction:column;gap:4px}
+.ep-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+.ep-val{font-size:13px;font-weight:700;color:var(--text)}
+.pp-ok{color:#059669}.pp-warn{color:#d97706}.pp-danger{color:#dc2626}
+.ep-edit-btn{display:block;width:100%;padding:12px;text-align:center;background:var(--bg);border:none;border-top:1px solid var(--border);font-size:13px;color:var(--pri);font-weight:700;cursor:pointer;letter-spacing:.02em}
+.ep-edit-btn:active{background:var(--pri-l)}
+.ep-form{padding:14px 16px;border-top:1px solid var(--border);display:none}
+.ep-form.open{display:block}
+.ep-form input{display:block;width:100%;margin-bottom:10px;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--rs);font-size:13px;background:var(--card);color:var(--text)}
+.sheets-bar{display:flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--rs);padding:11px 14px;margin-bottom:14px;font-size:12px}
+
+/* DISPATCH */
+.dc{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:14px;border:1px solid var(--border)}
+.dh{padding:14px 16px;background:#fff8f0;border-radius:var(--r) var(--r) 0 0;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #fde8cc}
+.dt{font-size:14px;font-weight:800;color:#92400e}
+.dh-btns{display:flex;gap:8px;flex-wrap:wrap}
+.cpb{font-size:12px;font-weight:700;color:var(--pri);padding:6px 14px;border:1.5px solid var(--pri);border-radius:var(--rs);background:#fff}
+.lineb{font-size:12px;font-weight:700;color:#fff;padding:6px 14px;border-radius:var(--rs);background:#06c755}
+.lineb:active,.cpb:active{opacity:.75}
+.db{padding:16px;font-size:12px;font-family:monospace;line-height:1.9;background:var(--bg);border-radius:0 0 var(--r) var(--r);white-space:pre-wrap;word-break:break-all}
+
+/* TODO */
+.tl{list-style:none}
+.ti{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.ti:last-child{border-bottom:none}
+.ck{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:13px;cursor:pointer}
+.ck.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.tt{flex:1;font-size:14px;cursor:pointer;font-weight:500}
+.tt.done{text-decoration:line-through;color:var(--muted)}
+.td-cal{font-size:14px;padding:3px 6px;opacity:.45;flex-shrink:0;color:var(--pri)}
+.td-cal:hover{opacity:1}
+.td-del{font-size:17px;padding:3px 6px;opacity:.35;flex-shrink:0;color:var(--danger);line-height:1}
+.td-del:hover{opacity:1}
+.tadd{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+
+/* BOTTOM BAR */
+.bb{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;z-index:150}
+
+/* TOAST */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--pri);color:#fff;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:700;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:999;box-shadow:0 6px 20px rgba(30,53,96,.3)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* EMPTY */
+.empty{text-align:center;padding:56px 20px;color:var(--muted)}
+.empty .eico{font-size:52px;margin-bottom:14px;display:flex;justify-content:center;align-items:center}
+.empty h3{font-size:17px;font-weight:800;margin-bottom:6px;color:var(--text)}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:rgba(255,255,255,.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:500;gap:14px}
+#loading.on{display:flex}
+.spin{width:44px;height:44px;border:4px solid var(--border);border-top-color:var(--pri);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* HLINKS */
+.hlinks{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.hlink{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;font-weight:700;border:1px solid var(--border)}
+.hlink sub{font-size:11px;color:var(--muted);font-weight:400;display:block}
+
+/* ── PWA INSTALL BANNER ── */
+.pwa-bar{display:none;background:linear-gradient(135deg,var(--pri),#4f46e5);color:#fff;border-radius:var(--r);padding:14px 16px;margin:14px 14px 0;align-items:center;gap:10px}
+.pwa-bar.show{display:flex}
+.pwa-ios{display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r);padding:12px 14px;margin:14px 14px 0;font-size:12px;color:#166534;line-height:1.8}
+.pwa-ios.show{display:block}
+/* ── MOBILE UPLOAD ── */
+.mob-up{display:none;flex-direction:column;gap:8px;margin-top:12px}
+@media(max-width:640px){.drop{display:none!important}.mob-up{display:flex}}
+/* ── TAB SWIPE HINT ── */
+.tab-hint{display:none;text-align:center;font-size:11px;color:var(--muted);padding:4px 0 2px;letter-spacing:.02em}
+@media(max-width:640px){.tab-hint{display:block}}
+
+/* dark mode 已停用 — 固定淺色風格 */
+
+/* ═══ LOGIN SCREEN ═══ */
+#ls{position:fixed;inset:0;z-index:9999;background:linear-gradient(150deg,#0d1e3d 0%,#1e3560 55%,#2d5096 100%);display:flex;align-items:center;justify-content:center;padding:24px}
+.lc{background:#fff;border-radius:16px;padding:38px 30px;width:100%;max-width:360px;box-shadow:0 24px 64px rgba(0,0,0,.35);text-align:center}
+.l-logo{font-size:54px;margin-bottom:8px}
+.l-title{font-size:24px;font-weight:900;color:#1a2035;margin-bottom:4px}
+.l-sub{font-size:13px;color:#8b94b5;margin-bottom:28px}
+.l-field{text-align:left;margin-bottom:14px}
+.l-field label{display:block;font-size:11px;font-weight:800;color:#8b94b5;margin-bottom:5px;text-transform:uppercase;letter-spacing:.07em}
+.l-field input{width:100%;padding:12px 15px;border:1.5px solid #eaecf4;border-radius:8px;font-size:15px;color:#1a2035;outline:none;transition:border .2s;font-family:inherit;background:#f5f7fb}
+.l-field input:focus{border-color:#1e3560;background:#fff;box-shadow:0 0 0 3px rgba(30,53,96,.1)}
+.l-err{background:#fee2e2;color:#dc2626;border-radius:6px;padding:9px 12px;font-size:13px;font-weight:700;margin-bottom:14px;display:none}
+.l-btn{width:100%;padding:14px;background:#1e3560;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;margin-top:4px;letter-spacing:.03em;transition:opacity .15s}
+.l-btn:active{opacity:.8}
+.l-ver{font-size:11px;color:#b0b9d0;margin-top:18px}
+/* 登入頁 dark mode 已停用 */
+/* 登入搖晃動畫 */
+@keyframes lc-shake{0%,100%{transform:none}20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.lc-shake{animation:lc-shake .38s ease}
+/* 登入按鈕漸層 */
+.l-btn{background:linear-gradient(135deg,#1a56db,#0ea5e9)!important;transition:opacity .15s,transform .1s!important}
+.l-btn:hover{opacity:.92}.l-btn:active{opacity:.8;transform:scale(.98)!important}
+/* ═══ ACCOUNT MANAGEMENT ═══ */
+.am-wrap{display:flex;flex-direction:column;gap:10px}
+.am-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.am-hd{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.am-av{width:38px;height:38px;background:rgba(255,255,255,.2);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0}
+.am-info{flex:1}.am-uname{color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px}
+.am-role{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:3px}
+.am-role-admin{background:#fbbf24;color:#78350f}.am-role-user{background:rgba(255,255,255,.25);color:#fff}
+.am-self{font-size:10px;font-weight:700;background:#d1fae5;color:#065f46;padding:1px 7px;border-radius:4px}
+.am-bd{padding:10px 14px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border)}
+.am-pwd-form{padding:12px 14px;border-top:1px solid var(--border);display:none}
+.am-add-form{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.am-info-box{background:var(--bg);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:4px}
+select.inp{appearance:none;-webkit-appearance:none}
+</style>
+<!-- PDF.js：完整支援 Identity-H / CIDFont 編碼的 PDF 文字擷取 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if(typeof pdfjsLib!=='undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc=
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+</script>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="ls">
+  <div class="lc">
+    <div class="l-logo"><svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></div>
+    <div class="l-title">GAMA 差旅助手</div>
+    <div class="l-sub">GAMA TECHNOLOGY · 請登入後繼續</div>
+    <div class="l-err" id="l-err">帳號或密碼錯誤，請重新輸入</div>
+    <div class="l-field">
+      <label>帳號</label>
+      <input id="lu" type="text" placeholder="請輸入帳號" autocomplete="username"
+             onkeydown="if(event.key==='Enter')document.getElementById('lp').focus()">
+    </div>
+    <div class="l-field">
+      <label>密碼</label>
+      <input id="lp" type="password" placeholder="請輸入密碼" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="l-btn" onclick="doLogin()">登 入</button>
+    <div class="l-ver">v2026.03 · 資料僅存於本機</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="scr on" id="sd">
+  <div class="top">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e3560" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+    <h1>GAMA 差旅助手</h1>
+    <button class="top-btn" id="admin-btn" title="帳號管理" onclick="go('sam')" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <button class="top-btn" title="登出" onclick="if(confirm('確定要登出嗎？'))doLogout()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    <button class="top-btn" onclick="go('su')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+  </div>
+  <!-- PWA 安裝橫幅 Android -->
+  <div id="pwa-banner" class="pwa-bar">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="16" x2="12" y2="18"/><polyline points="9 10 12 13 15 10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:14px">安裝到手機主畫面</div>
+      <div style="font-size:12px;opacity:.85">像 App 一樣開啟，支援離線使用</div>
+    </div>
+    <button onclick="installPWA()" style="background:#fff;color:var(--pri);font-weight:700;font-size:13px;padding:7px 14px;border-radius:8px;white-space:nowrap">安裝</button>
+    <button onclick="document.getElementById('pwa-banner').classList.remove('show')" style="font-size:24px;color:rgba(255,255,255,.6);padding:0 4px;line-height:1">×</button>
+  </div>
+  <!-- PWA 安裝提示 iOS Safari -->
+  <div id="pwa-ios" class="pwa-ios">
+    <b>安裝到主畫面</b>：點 Safari 下方 <b>分享</b>（□↑）按鈕 → 選「<b>加入主畫面</b>」即可像 App 使用
+    <button onclick="document.getElementById('pwa-ios').classList.remove('show')" style="float:right;font-size:13px;color:var(--muted);margin-top:2px">知道了 ×</button>
+  </div>
+  <div style="padding:14px 14px 88px" id="dash"></div>
+  <button class="fab" onclick="go('su')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+</div>
+
+<!-- UPLOAD -->
+<div class="scr" id="su">
+  <div class="top">
+    <button class="back" onclick="go('sd')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回</button>
+    <h1>上傳機票 PDF</h1>
+  </div>
+  <div style="padding:14px 14px 90px">
+    <div class="card">
+      <div class="ctitle">電子機票 PDF（可多選）</div>
+      <div class="drop" id="dz" onclick="document.getElementById('fi').click()">
+        <div class="ico"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#1e3560" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg></div>
+        <h3>點擊選取或拖曳 PDF</h3>
+        <p>韓亞、長榮、國泰等電子機票<br>同行多位旅客可同時上傳，自動合併</p>
+      </div>
+      <!-- 手機專用上傳按鈕（電腦端自動隱藏） -->
+      <div class="mob-up">
+        <button class="bs bp" onclick="document.getElementById('fi').click()" style="width:100%;padding:16px;font-size:15px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>選取機票 PDF</button>
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:2px">可從「檔案」App 選取 PDF，或直接拍照</p>
+      </div>
+      <input type="file" id="fi" accept=".pdf,image/*" multiple>
+      <input type="file" id="hci" accept=".pdf,.txt,.jpg,.jpeg,.png" style="display:none">
+      <div id="fcnt" class="fcnt"></div>
+      <div id="fl" style="margin-top:8px"></div>
+    </div>
+    <div id="ps" style="display:none">
+      <div class="card" id="pr"></div>
+      <div class="card">
+        <div class="ctitle">補充資訊（選填，之後可再編輯）</div>
+        <div style="display:grid;gap:10px">
+          <div><label class="lbl">活動 / 出差事由</label><input id="ev" class="inp" type="text" placeholder="例：Google Next 2026"></div>
+          <div><label class="lbl">飯店名稱</label><input id="hn" class="inp" type="text" placeholder="例：紐約紐約大飯店"></div>
+          <div><label class="lbl">飯店費用 (TWD)</label><input id="hpr" class="inp" type="number" placeholder="例：49540"></div>
+        </div>
+      </div>
+      <button class="bf bp" onclick="saveTrip()" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>儲存並查看出差資料</button>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="ctitle">說明</div>
+      <p style="font-size:12px;color:var(--muted);line-height:1.7">PDF 解析後自動帶出所有頁籤。可同時上傳多位旅客 PDF 自動合併。資料存於本機瀏覽器不上傳。</p>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="scr" id="sde">
+  <div class="top">
+    <button class="back" onclick="go('sd')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回</button>
+    <h1 id="dtitle">出差詳情</h1>
+  </div>
+  <div id="dhero" class="dhero"></div>
+  <div id="draft-banner" style="display:none" class="draft-banner" style="margin:12px 14px 0;flex-wrap:wrap;gap:8px">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span style="flex:1">預覽模式 — 資料已自動帶入，確認後儲存</span>
+    <button class="bs bp" style="padding:4px 12px;font-size:12px;white-space:nowrap" onclick="saveFromPreview()">儲存行程</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-t="tf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>航班</button>
+    <button class="tab" data-t="tv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>簽證</button>
+    <button class="tab" data-t="th"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M3 22V12a9 9 0 0 1 18 0v10"/><path d="M3 12h18"/><path d="M9 22V16h6v6"/></svg>訂房</button>
+    <button class="tab" data-t="td"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>派車</button>
+    <button class="tab" data-t="tt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>待辦</button>
+    <button class="tab" data-t="te"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>員工</button>
+    <button class="tab" data-t="tr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>報告</button>
+  </div>
+  <div class="tab-hint">← 左右滑動切換頁籤 →</div>
+  <div style="padding-bottom:80px">
+    <div class="tc2 on" id="tf"></div>
+    <div class="tc2" id="tv"></div>
+    <div class="tc2" id="th"></div>
+    <div class="tc2" id="td"></div>
+    <div class="tc2" id="tt"></div>
+    <div class="tc2" id="te"></div>
+    <div class="tc2" id="tr"></div>
+  </div>
+  <div class="bb" id="detail-bb">
+    <button class="bs bo" id="del-btn" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px" onclick="delTripStep()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>刪除</button>
+    <button class="bs bp" style="flex:2;display:flex;align-items:center;justify-content:center;gap:6px" onclick="switchTab('tr')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>查看報告</button>
+  </div>
+</div>
+
+<!-- ACCOUNT MANAGEMENT -->
+<div class="scr" id="sam">
+  <div class="top">
+    <button class="back" onclick="go('sd')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> 返回</button>
+    <h1>帳號管理</h1>
+  </div>
+  <div style="padding:14px 14px 90px" id="am-body"></div>
+</div>
+
+<div id="toast"></div>
+<div id="loading"><div class="spin"></div><div style="font-size:14px;color:var(--muted)">解析 PDF 中…</div></div>
+
+<script>
+// ── SVG icon helper ────────────────────
+var _SVG={
+  plane:'<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
+  arrive:'<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/><path d="M5 5v14"/>',
+  person:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  tag:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  hotel:'<path d="M3 22V12a9 9 0 0 1 18 0v10"/><path d="M3 12h18"/><path d="M9 22V16h6v6"/>',
+  car:'<rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  key:'<circle cx="8.5" cy="15.5" r="4.5"/><line x1="15" y1="9" x2="21" y2="9"/><line x1="19" y1="7" x2="19" y2="11"/><line x1="12.5" y1="11.5" x2="15" y2="9"/>',
+  report:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  copy:'<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>'
+};
+function icn(name,sz,col){
+  sz=sz||16;col=col||'currentColor';
+  return '<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0">'+(_SVG[name]||'')+'</svg>';
+}
+
+// ═══════════════════════════════════════
+// 帳號管理系統（localStorage 動態管理）
+// ═══════════════════════════════════════
+var AUTH_KEY      = 'gama_auth_user';
+var AUTH_ROLE_KEY = 'gama_auth_role';
+var ACCOUNTS_KEY  = 'gama_accounts';
+
+// 預設帳號（首次使用時自動建立）
+var DEFAULT_ACCOUNTS = [
+  {user:'admin', pass:'GAMA2026',  role:'admin', created:'2026-01-01'},
+  {user:'gama',  pass:'travel888', role:'user',  created:'2026-01-01'}
+];
+
+function getAccounts(){
+  var raw=localStorage.getItem(ACCOUNTS_KEY);
+  if(!raw){
+    var def=JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+    localStorage.setItem(ACCOUNTS_KEY,JSON.stringify(def));
+    return def;
+  }
+  try{return JSON.parse(raw);}
+  catch(e){return JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));}
+}
+function saveAccounts(arr){localStorage.setItem(ACCOUNTS_KEY,JSON.stringify(arr));}
+function isAdmin(){return localStorage.getItem(AUTH_ROLE_KEY)==='admin';}
+
+function updateAdminBtn(){
+  var btn=document.getElementById('admin-btn');
+  if(btn) btn.style.display=isAdmin()?'flex':'none';
+}
+
+function checkAuth(){
+  if(localStorage.getItem(AUTH_KEY)){
+    document.getElementById('ls').style.display='none';
+    updateAdminBtn();
+  }
+}
+
+function doLogin(){
+  var u=(document.getElementById('lu').value||'').trim();
+  var p=document.getElementById('lp').value||'';
+  var err=document.getElementById('l-err');
+  var found=getAccounts().find(function(a){return a.user===u&&a.pass===p;});
+  if(found){
+    localStorage.setItem(AUTH_KEY,u);
+    localStorage.setItem(AUTH_ROLE_KEY,found.role||'user');
+    var ls=document.getElementById('ls');
+    ls.style.transition='opacity .3s';
+    ls.style.opacity='0';
+    setTimeout(function(){ls.style.display='none';updateAdminBtn();},300);
+  } else {
+    err.style.display='block';
+    document.getElementById('lp').value='';
+    document.getElementById('lp').focus();
+    var lc=document.querySelector('.lc');
+    lc.classList.remove('lc-shake');
+    void lc.offsetWidth;
+    lc.classList.add('lc-shake');
+  }
+}
+
+function doLogout(){
+  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(AUTH_ROLE_KEY);
+  location.reload();
+}
+
+// 頁面載入時立即檢查登入狀態
+checkAuth();
+
+// ── 帳號管理介面（admin 專屬） ──────────────────────
+function escHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderAccountMgmt(){
+  if(!isAdmin()){toast('⚠️ 需要管理員權限');go('sd');return;}
+  var accounts=getAccounts();
+  var me=localStorage.getItem(AUTH_KEY);
+  var h='<div class="am-wrap">';
+  h+='<div class="am-info-box">管理系統帳號，僅管理員可進入此頁面。<br>帳號資料儲存於本機瀏覽器，請勿使用重要密碼。</div>';
+  accounts.forEach(function(a,i){
+    var isSelf=(a.user===me);
+    var adminCount=accounts.filter(function(x){return x.role==='admin';}).length;
+    var isLastAdmin=(a.role==='admin'&&adminCount===1);
+    var canDelete=!isSelf&&!isLastAdmin;
+    h+='<div class="am-card">';
+    h+='<div class="am-hd">';
+    h+='<div class="am-av">'+escHtml(a.user[0]).toUpperCase()+'</div>';
+    h+='<div class="am-info">';
+    h+='<div class="am-uname">'+escHtml(a.user)+(isSelf?'<span class="am-self">本帳號</span>':'')+'</div>';
+    h+='<span class="am-role '+(a.role==='admin'?'am-role-admin':'am-role-user')+'">'+(a.role==='admin'?'管理員':'一般使用者')+'</span>';
+    if(a.created) h+='<div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">建立：'+escHtml(a.created)+'</div>';
+    h+='</div></div>';
+    h+='<div class="am-bd">';
+    h+='<button class="bs bo" style="font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:5px" onclick="showAmPwdForm('+i+')">'+icn('key',13)+'改密碼</button>';
+    if(canDelete){
+      h+='<button class="bs bd" style="font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:5px" onclick="doDeleteAccount('+i+')">'+icn('trash',13)+'刪除</button>';
+    }
+    h+='</div>';
+    h+='<div class="am-pwd-form" id="am-pf-'+i+'">';
+    h+='<label class="lbl">新密碼</label>';
+    h+='<input class="inp" type="password" id="am-np-'+i+'" placeholder="輸入新密碼（至少 4 字元）" style="margin-bottom:8px">';
+    h+='<div style="display:flex;gap:8px">';
+    h+='<button class="bs bp" style="flex:1;font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:5px" onclick="doChangePwd('+i+')">'+icn('check',13,'#fff')+'確認修改</button>';
+    h+='<button class="bs bo" style="font-size:12px" onclick="hideAmPwdForm('+i+')">取消</button>';
+    h+='</div></div>';
+    h+='</div>';
+  });
+  // 新增帳號表單
+  h+='<div class="am-add-form">';
+  h+='<div class="ctitle">新增帳號</div>';
+  h+='<div style="display:grid;gap:8px">';
+  h+='<div><label class="lbl">帳號名稱</label><input class="inp" id="am-nu" type="text" placeholder="英數字、底線、連字號"></div>';
+  h+='<div><label class="lbl">密碼</label><input class="inp" id="am-np" type="password" placeholder="至少 4 字元"></div>';
+  h+='<div><label class="lbl">角色</label><select class="inp" id="am-nr"><option value="user">一般使用者</option><option value="admin">管理員</option></select></div>';
+  h+='<button class="bs bp" style="display:flex;align-items:center;justify-content:center;gap:6px" onclick="doAddAccount()">'+icn('person',15,'#fff')+'新增帳號</button>';
+  h+='</div></div>';
+  h+='</div>';
+  // 危險區：清除資料
+  h+='<div class="card" style="margin-top:18px;border:1.5px solid #fee2e2">';
+  h+='<div style="font-weight:800;color:#dc2626;margin-bottom:10px;font-size:14px">⚠️ 危險區</div>';
+  h+='<button class="bs bo" style="display:flex;align-items:center;gap:6px;border-color:#dc2626;color:#dc2626;width:100%;justify-content:center" onclick="clearAllTrips()">'+icn('trash',15,'#dc2626')+' 清除所有行程資料</button>';
+  h+='<div style="font-size:11px;color:var(--muted);margin-top:8px">清除後無法復原，所有行程將永久刪除</div>';
+  h+='</div>';
+  document.getElementById('am-body').innerHTML=h;
+}
+function clearAllTrips(){
+  if(!confirm('確定要清除所有行程資料？\n此操作無法復原！')) return;
+  localStorage.removeItem('gama_trips');
+  MEM=null;
+  toast('✅ 所有行程資料已清除');
+  go('sd');
+  renderDash();
+}
+
+function showAmPwdForm(i){
+  document.querySelectorAll('.am-pwd-form').forEach(function(f){f.style.display='none';});
+  document.getElementById('am-pf-'+i).style.display='block';
+  document.getElementById('am-np-'+i).focus();
+}
+function hideAmPwdForm(i){document.getElementById('am-pf-'+i).style.display='none';}
+
+function doChangePwd(i){
+  var np=(document.getElementById('am-np-'+i).value||'').trim();
+  if(np.length<4){toast('⚠️ 密碼至少需要 4 個字元');return;}
+  var accounts=getAccounts();
+  accounts[i].pass=np;
+  saveAccounts(accounts);
+  toast('✅ 密碼已更新：'+escHtml(accounts[i].user));
+  renderAccountMgmt();
+}
+
+function doDeleteAccount(i){
+  var accounts=getAccounts();
+  var t=accounts[i];
+  if(!confirm('確定要刪除帳號「'+t.user+'」？此操作無法復原。'))return;
+  accounts.splice(i,1);
+  saveAccounts(accounts);
+  toast('🗑 已刪除：'+t.user);
+  renderAccountMgmt();
+}
+
+function doAddAccount(){
+  var u=(document.getElementById('am-nu').value||'').trim();
+  var p=(document.getElementById('am-np').value||'').trim();
+  var r=document.getElementById('am-nr').value;
+  if(!u){toast('⚠️ 請輸入帳號名稱');return;}
+  if(!/^[a-zA-Z0-9_\-.]+$/.test(u)){toast('⚠️ 帳號只能包含英數字、底線、連字號');return;}
+  if(p.length<4){toast('⚠️ 密碼至少需要 4 個字元');return;}
+  var accounts=getAccounts();
+  if(accounts.some(function(a){return a.user===u;})){toast('⚠️ 帳號「'+u+'」已存在');return;}
+  var today=new Date().toISOString().slice(0,10);
+  accounts.push({user:u,pass:p,role:r,created:today});
+  saveAccounts(accounts);
+  toast('✅ 已新增帳號：'+u);
+  renderAccountMgmt();
+}
+
+// ═══════════════════════════════════════
+// HOTEL DATABASE — 主要出差城市飯店推薦
+// ═══════════════════════════════════════
+// ─── VISA DB（依台灣外交部領事事務局公告） ─────────────────────────
+var VISA_DB={
+  '美國':{
+    status:'warn',icon:'⚠️',
+    title:'需申請 ESTA（電子旅行授權）',
+    subtitle:'免簽入境，但須事先取得電子授權',
+    visaReq:'需申請 ESTA：赴美前須至官方網站申請電子旅行授權（ESTA），建議出發前 72 小時完成，費用 USD 21/人，有效期 2 年',
+    duration:'每次最多 90 天',
+    fee:'USD 21 / 人',
+    validity:'2 年或至護照到期（以較早者為準）',
+    applyUrl:'https://esta.cbp.dhs.gov/',
+    applyLabel:'esta.cbp.dhs.gov（官方申請）',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-4511-7785a-1.html',
+    entryReq:['有效護照（效期 6 個月以上）','ESTA 核准確認信（請儲存電子郵件）','回程或轉程機票','英文財力證明（如銀行存款證明）'],
+    notes:['請於出發前至少 72 小時完成 ESTA 申請','護照效期須超過入境後停留天數 6 個月','不得在美從事工作、就學或移民目的','違反規定將影響未來赴美資格']
+  },
+  '澳門':{
+    status:'ok',icon:'✅',
+    title:'免簽證入境',
+    subtitle:'中華民國護照持有人可免簽停留',
+    visaReq:'免簽：持有效中華民國護照可直接免簽入境澳門，最多停留 30 天',
+    duration:'最多 30 天（可申請延簽）',
+    fee:'免費',
+    validity:'—',
+    applyUrl:'',applyLabel:'',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    entryReq:['有效中華民國護照','回程機票','住宿證明或飯店訂房確認書'],
+    notes:['護照效期需超過預定停留期限','可攜帶澳門幣 MOP 1,000 現金免申報','如攜帶超過等值 MOP 120,000 現金需申報']
+  },
+  '韓國':{
+    status:'ok',icon:'✅',
+    title:'免簽證入境（K-ETA 豁免）',
+    subtitle:'台灣自 2024 年起列入 K-ETA 豁免名單',
+    visaReq:'免簽（K-ETA 豁免）：自 2024 年起台灣護照無需申請 K-ETA，可直接免簽入境韓國，停留最多 90 天',
+    duration:'最多 90 天',
+    fee:'免費',
+    validity:'—',
+    applyUrl:'',applyLabel:'',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-4525-ac558-1.html',
+    entryReq:['有效護照（效期 6 個月以上）','回程機票','住宿相關文件（建議備妥）'],
+    notes:['2024 年起無需申請 K-ETA，可直接免簽入境','入境時海關可能詢問行程與住宿','護照效期建議超過停留天數 6 個月']
+  },
+  '日本':{
+    status:'ok',icon:'✅',
+    title:'免簽證入境',
+    subtitle:'中華民國護照持有人可免簽停留',
+    visaReq:'免簽：持有效中華民國護照可直接免簽入境日本，停留最多 90 天；建議使用 Visit Japan Web 預先填報入境資料',
+    duration:'最多 90 天',
+    fee:'免費',
+    validity:'—',
+    applyUrl:'https://vjw-lp.digital.go.jp/',
+    applyLabel:'Visit Japan Web（建議預先登錄）',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-4497-d6005-1.html',
+    entryReq:['有效護照','入境卡（可用 Visit Japan Web 出示 QR 碼代替）','回程機票'],
+    notes:['建議使用 Visit Japan Web 預先完成入境手續，可加快通關','護照效期需超過預定停留期限','禁止攜帶超過個人用量之藥品或生鮮食品']
+  },
+  '泰國':{
+    status:'ok',icon:'✅',
+    title:'免簽證入境',
+    subtitle:'台泰免簽協議，可停留 30 天',
+    visaReq:'免簽：台泰免簽協議，持有效中華民國護照可直接免簽入境泰國，停留最多 30 天，無需事先申請任何文件',
+    duration:'最多 30 天',
+    fee:'免費',validity:'—',applyUrl:'',applyLabel:'',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    entryReq:['有效護照（效期 6 個月以上）','回程機票','現金或財力證明'],
+    notes:['護照效期須超過停留天數 6 個月','機場可能要求出示現金（THB 10,000 / 人）']
+  },
+  '新加坡':{
+    status:'ok',icon:'✅',
+    title:'免簽證入境',
+    subtitle:'可停留 30 天',
+    duration:'最多 30 天',
+    fee:'免費',validity:'—',applyUrl:'',applyLabel:'',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    visaReq:'免簽：無需申請簽證，持有效中華民國護照可直接入境',
+    entryReq:['有效護照（效期 6 個月以上）','回程機票','住宿地址'],
+    notes:['入境前建議至 SG Arrival Card 網站預先填報','護照效期須超過停留天數 6 個月']
+  },
+  '香港':{
+    status:'ok',icon:'✅',
+    title:'免簽證入境',
+    subtitle:'中華民國護照持有人可免簽停留',
+    duration:'最多 90 天（每次入境）',
+    fee:'免費',validity:'—',applyUrl:'',applyLabel:'',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    visaReq:'免簽：持有效中華民國護照可直接入境，無需預先申請簽證',
+    entryReq:['有效護照','回程機票','足夠生活費用'],
+    notes:['護照效期須超過預計停留天數','不得從事受薪工作','現況屬中國特別行政區，入境審查可能較嚴格']
+  },
+  '馬來西亞':{
+    status:'ok',icon:'✅',
+    title:'免簽證入境',
+    subtitle:'台馬免簽協議，可停留 30 天',
+    duration:'最多 30 天',
+    fee:'免費',validity:'—',applyUrl:'',applyLabel:'',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    visaReq:'免簽：持有效中華民國護照，無需申請簽證',
+    entryReq:['有效護照（效期 6 個月以上）','回程機票','足夠生活費'],
+    notes:['護照效期須超過停留天數 6 個月','吉隆坡有兩座機場（KLIA 及 KLIA2），請確認航廈']
+  },
+  '越南':{
+    status:'warn',icon:'⚠️',
+    title:'需申請電子簽證（E-visa）',
+    subtitle:'台灣自 2023 年起可申請越南 E-visa，無需預約面試',
+    duration:'最多 90 天（單次）',
+    fee:'USD 25 / 人',
+    validity:'申請後 30 天內入境有效',
+    applyUrl:'https://evisa.xuatnhapcanh.gov.vn/',
+    applyLabel:'越南電子簽證官方網站',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    visaReq:'需申請 E-visa：出發前需至越南官方網站申請電子簽證，核准後列印或存手機備用',
+    entryReq:['有效護照（效期 6 個月以上）','越南 E-visa 核准函（列印 A4 彩色）','回程機票','入境目的說明'],
+    notes:['E-visa 建議出發前 5-7 個工作天申請','簽證核准後 E-visa 不可修改姓名/護照號碼','部分口岸不接受 E-visa，請確認入境口岸']
+  },
+  '菲律賓':{
+    status:'ok',icon:'✅',
+    title:'免簽證入境（30 天）',
+    subtitle:'台灣護照可免簽停留 30 天',
+    duration:'最多 30 天（可延簽至 59 天）',
+    fee:'免費入境；延簽需費用',validity:'—',
+    applyUrl:'',applyLabel:'',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    visaReq:'免簽：持有效中華民國護照可直接入境 30 天',
+    entryReq:['有效護照（效期 6 個月以上）','回程機票（必要，海關常查）','足夠生活費（建議 USD 50/天）'],
+    notes:['回程機票幾乎必查，請務必備妥','入境時可能被問及住宿及行程','馬尼拉機場 Terminal 不同，請確認航廈']
+  },
+  '澳洲':{
+    status:'warn',icon:'⚠️',
+    title:'需申請 ETA（電子旅遊簽證）',
+    subtitle:'持台灣護照須事先取得 ETA 授權',
+    duration:'最多 3 個月（每次入境）',
+    fee:'AUD 20 / 人',
+    validity:'12 個月（多次入境）',
+    applyUrl:'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/electronic-travel-authority-601',
+    applyLabel:'澳洲 ETA 申請（官方）',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    visaReq:'需申請 ETA（電子旅遊授權）：免預約面試，線上申請，通常數分鐘至 24 小時核准',
+    entryReq:['有效護照（效期 6 個月以上）','ETA 核准（綁定護照，無需列印）','回程機票','英文財力或邀請函'],
+    notes:['ETA 不蓋章在護照上，請保存申請確認信','入境時需申報攜帶物品','禁止攜帶肉類、蔬果、種子等生鮮農產品']
+  },
+  '英國':{
+    status:'warn',icon:'⚠️',
+    title:'需申請 ETA（電子旅行授權）',
+    subtitle:'2025 年起台灣護照需申請英國 ETA',
+    duration:'最多 6 個月',
+    fee:'GBP 10 / 人',
+    validity:'2 年或至護照到期（以較早者為準）',
+    applyUrl:'https://www.gov.uk/apply-electronic-travel-authorisation',
+    applyLabel:'英國 ETA 申請（官方）',
+    mofaUrl:'https://www.boca.gov.tw/cp-56-37-4e005-1.html',
+    visaReq:'需申請英國 ETA（電子旅行授權）：2025 年起強制，出發前需線上申請',
+    entryReq:['有效護照','英國 ETA 核准','回程機票','財力證明或邀請函'],
+    notes:['ETA 建議出發前至少 72 小時申請','護照效期須超過停留天數','請確認英國 ETA vs UK Visa 適用條件']
+  }
+};
+var VISA_DEFAULT={
+  status:'info',icon:'ℹ️',
+  title:'請查詢外交部領事事務局',
+  subtitle:'該目的地簽證資訊需至外交部網站確認',
+  duration:'—',fee:'—',validity:'—',
+  applyUrl:'https://www.boca.gov.tw/',applyLabel:'外交部領事事務局',
+  mofaUrl:'https://www.boca.gov.tw/',
+  visaReq:'目前尚無此目的地資料，請至外交部領事事務局查詢最新簽證規定',
+  entryReq:['請至外交部領事事務局查詢最新入境規定'],
+  notes:['規定可能隨時更新，請以外交部最新公告為準']
+};
+
+var HOTEL_DB = {
+  MFM:[
+    {name:'Galaxy Macau',zh:'銀河澳門度假城',agoda:9.0,google:4.6,price:9800,
+     pros:'超豪華設施、天浪淘園水上樂園、鄰近多家餐廳',cons:'人潮眾多，假日需提早預訂',
+     roomKing:'Deluxe Lagoon King',roomTwin:'Deluxe Lagoon Twin',
+     agodaSlug:'galaxy-macau/hotel/macau-mo.html'},
+    {name:'Grand Lisboa Palace',zh:'葡京人酒店',agoda:9.1,google:4.7,price:12000,
+     pros:'全澳最新旗艦酒店、設計感強、服務頂級',cons:'距巴士總站較遠',
+     roomKing:'Deluxe King',roomTwin:'Deluxe Twin',
+     agodaSlug:'grand-lisboa-palace/hotel/macau-mo.html'},
+    {name:'The Londoner Macao',zh:'澳門倫敦人',agoda:8.8,google:4.5,price:8500,
+     pros:'英倫主題、商業設施齊全、鄰近威尼斯人',cons:'賭場人潮較多',
+     roomKing:'Londoner King',roomTwin:'Londoner Twin',
+     agodaSlug:'the-londoner-macao/hotel/macau-mo.html'},
+    {name:'MGM Cotai',zh:'美獅美高梅',agoda:8.5,google:4.4,price:7200,
+     pros:'現代設計、室內花園、親子設施完善',cons:'距舊城區較遠',
+     roomKing:'Grande King',roomTwin:'Grande Twin',
+     agodaSlug:'mgm-cotai/hotel/macau-mo.html'},
+    {name:'Sheraton Grand Macao',zh:'澳門喜來登大酒店',agoda:8.2,google:4.3,price:5800,
+     pros:'性價比高、設施完善、鄰近金沙城中心',cons:'部分設施較舊',
+     roomKing:'Superior King',roomTwin:'Superior Twin',
+     agodaSlug:'sheraton-grand-macao-hotel-cotai-central/hotel/macau-mo.html'}
+  ],
+  LAS:[
+    {name:'Wynn Las Vegas',zh:'永利拉斯維加斯',agoda:9.0,google:4.6,price:8200,
+     pros:'頂級服務、優雅客房、距LVCC步行10分鐘',cons:'房費較高',
+     roomKing:'Panoramic King Room',roomTwin:'Panoramic Double Queen',
+     agodaSlug:'wynn-las-vegas/hotel/las-vegas-nv-us.html'},
+    {name:'The Venetian Resort',zh:'威尼斯人度假酒店',agoda:8.8,google:4.4,price:5600,
+     pros:'全套房式客房、購物餐飲齊全、鄰近LVCC',cons:'大廳及走廊人潮多',
+     roomKing:'Luxury King Suite',roomTwin:'Luxury Double Queen Suite',
+     agodaSlug:'the-venetian-resort-las-vegas/hotel/las-vegas-nv-us.html'},
+    {name:'Resorts World Las Vegas',zh:'瑞索世界拉斯維加斯',agoda:8.6,google:4.3,price:4800,
+     pros:'最新飯店(2021)、緊鄰LVCC、Hilton/Conrad/LXR三品牌',cons:'品牌較新、知名度略低',
+     roomKing:'Hilton King Room',roomTwin:'Hilton Double Queen',
+     agodaSlug:'resorts-world-las-vegas/hotel/las-vegas-nv-us.html'},
+    {name:'MGM Grand Hotel & Casino',zh:'米高梅大飯店',agoda:8.2,google:4.2,price:4200,
+     pros:'設施完善、大型娛樂場、交通便利',cons:'客房走道距離長、設備略舊',
+     roomKing:'Grand King Room',roomTwin:'Grand Double Queen',
+     agodaSlug:'mgm-grand-hotel-casino/hotel/las-vegas-nv-us.html'},
+    {name:'SAHARA Las Vegas',zh:'撒哈拉拉斯維加斯',agoda:8.1,google:4.1,price:3200,
+     pros:'距LVCC最近、價格實惠、2021年翻新',cons:'娛樂設施較小型',
+     roomKing:'Luxe King Room',roomTwin:'Luxe Double Queen',
+     agodaSlug:'sahara-las-vegas/hotel/las-vegas-nv-us.html'}
+  ],
+  NRT:[
+    {name:'Park Hyatt Tokyo',zh:'東京柏悅酒店',agoda:9.2,google:4.7,price:18000,
+     pros:'絕佳視野、頂級服務',cons:'房費極高',roomKing:'Park King',roomTwin:'Park Twin',agodaSlug:'park-hyatt-tokyo/hotel/tokyo-jp.html'},
+    {name:'Cerulean Tower Tokyu Hotel',zh:'天空塔東急大飯店',agoda:8.8,google:4.5,price:8500,
+     pros:'澀谷地點絕佳、交通便利',cons:'部分房型偏小',roomKing:'Deluxe King',roomTwin:'Deluxe Twin',agodaSlug:'cerulean-tower-tokyu-hotel/hotel/tokyo-jp.html'},
+    {name:'Shinjuku Granbell Hotel',zh:'新宿格蘭貝爾飯店',agoda:8.5,google:4.3,price:4500,
+     pros:'設計感強、交通便利、性價比高',cons:'房間偏小',roomKing:'Superior King',roomTwin:'Superior Twin',agodaSlug:'shinjuku-granbell-hotel/hotel/tokyo-jp.html'},
+    {name:'Keio Plaza Hotel Tokyo',zh:'東京京王廣場飯店',agoda:8.4,google:4.3,price:6200,
+     pros:'新宿地點、設施齊全、服務穩定',cons:'建築稍舊',roomKing:'Superior King',roomTwin:'Superior Twin',agodaSlug:'keio-plaza-hotel-tokyo/hotel/tokyo-jp.html'},
+    {name:'APA Hotel Shinjuku',zh:'APA飯店新宿',agoda:8.0,google:4.1,price:2800,
+     pros:'地點好、價格實惠、設備新',cons:'房間非常小',roomKing:'Single King',roomTwin:'Double Twin',agodaSlug:'apa-hotel-shinjuku-kabukicho-tower/hotel/tokyo-jp.html'}
+  ],
+  ICN:[
+    {name:'Lotte Hotel Seoul',zh:'首爾樂天大飯店',agoda:8.9,google:4.5,price:7000,
+     pros:'市中心黃金地段、設施頂級',cons:'房費較高',roomKing:'Superior King',roomTwin:'Superior Twin',agodaSlug:'lotte-hotel-seoul/hotel/seoul-kr.html'},
+    {name:'JW Marriott Seoul',zh:'首爾萬豪酒店',agoda:8.8,google:4.5,price:7500,
+     pros:'設施完善、服務優質',cons:'距市中心稍遠',roomKing:'Deluxe King',roomTwin:'Deluxe Twin',agodaSlug:'jw-marriott-hotel-seoul/hotel/seoul-kr.html'},
+    {name:'Novotel Ambassador Seoul Gangnam',zh:'首爾江南諾富特',agoda:8.4,google:4.3,price:4500,
+     pros:'江南商業區便利、近地鐵',cons:'週邊夜生活較少',roomKing:'Superior King',roomTwin:'Superior Twin',agodaSlug:'novotel-ambassador-seoul-dongdaemun-hotels-residences/hotel/seoul-kr.html'},
+    {name:'Ibis Styles Ambassador Seoul Gangnam',zh:'首爾江南宜必思',agoda:8.2,google:4.2,price:3000,
+     pros:'性價比高、地點佳',cons:'房型偏小',roomKing:'Standard King',roomTwin:'Standard Twin',agodaSlug:'ibis-styles-ambassador-seoul-gangnam/hotel/seoul-kr.html'},
+    {name:'Nine Tree Premier Hotel Myeongdong',zh:'明洞九樹高級飯店',agoda:8.0,google:4.1,price:3500,
+     pros:'明洞購物方便、觀光便利',cons:'週末人潮擁擠',roomKing:'Premier King',roomTwin:'Premier Twin',agodaSlug:'nine-tree-premier-hotel-myeongdong/hotel/seoul-kr.html'}
+  ],
+  BKK:[
+    {name:'Mandarin Oriental Bangkok',zh:'曼谷文華東方酒店',agoda:9.4,google:4.8,price:18500,
+     pros:'百年老店、湄南河畔、服務傳奇、下午茶聞名',cons:'距市中心BTS稍遠，需搭接駁船',
+     roomKing:'Deluxe River King',roomTwin:'Deluxe River Twin',
+     agodaSlug:'mandarin-oriental-bangkok/hotel/bangkok-th.html'},
+    {name:'Rosewood Bangkok',zh:'曼谷瑰麗酒店',agoda:9.2,google:4.7,price:13000,
+     pros:'現代設計感強、Wireless Road黃金地段、近BTS Phloen Chit',cons:'2019年新開幕，知名度仍在累積',
+     roomKing:'Superior King',roomTwin:'Superior Twin',
+     agodaSlug:'rosewood-bangkok/hotel/bangkok-th.html'},
+    {name:'COMO Metropolitan Bangkok',zh:'曼谷都市精選酒店',agoda:9.0,google:4.6,price:9500,
+     pros:'精品設計、沙拉帕奧BTS站旁、頂級SPA設施',cons:'規模較小、餐飲選擇有限',
+     roomKing:'Metropolitan King',roomTwin:'Metropolitan Twin',
+     agodaSlug:'como-metropolitan-bangkok/hotel/bangkok-th.html'},
+    {name:'SO/Bangkok',zh:'曼谷SO酒店',agoda:8.7,google:4.5,price:7200,
+     pros:'盧美法公園旁、設計前衛、親近商業區',cons:'房間走道設計獨特有些人不適應',
+     roomKing:'SO Cosy King',roomTwin:'SO Cosy Twin',
+     agodaSlug:'so-bangkok/hotel/bangkok-th.html'},
+    {name:'Centara Grand at CentralWorld',zh:'中央世界凱悅飯店',agoda:8.3,google:4.4,price:5500,
+     pros:'直連CentralWorld購物中心、BTS Chit Lom旁、設施完整',cons:'大廳人潮多、假日購物人潮',
+     roomKing:'Deluxe King',roomTwin:'Deluxe Twin',
+     agodaSlug:'centara-grand-at-centralworld/hotel/bangkok-th.html'}
+  ],
+  HKG:[
+    {name:'The Peninsula Hong Kong',zh:'香港半島酒店',agoda:9.4,google:4.8,price:22000,
+     pros:'殖民地百年老牌、尖沙咀核心、頂樓直升機坪景觀',cons:'房費極高，需提早預訂',
+     roomKing:'Deluxe King',roomTwin:'Deluxe Twin',
+     agodaSlug:'the-peninsula-hong-kong/hotel/hong-kong-hk.html'},
+    {name:'Four Seasons Hotel Hong Kong',zh:'香港四季酒店',agoda:9.3,google:4.7,price:20000,
+     pros:'中環港景、頂級設施、米其林餐廳龍景軒',cons:'價位偏高',
+     roomKing:'Superior King',roomTwin:'Superior Twin',
+     agodaSlug:'four-seasons-hotel-hong-kong/hotel/hong-kong-hk.html'},
+    {name:'InterContinental Grand Stanford',zh:'香港帝苑酒店',agoda:8.8,google:4.5,price:10000,
+     pros:'尖沙咀東海港景、設施成熟、性價比佳',cons:'部分設施稍舊',
+     roomKing:'Grand King Harbour',roomTwin:'Grand Twin Harbour',
+     agodaSlug:'the-royal-garden/hotel/hong-kong-hk.html'},
+    {name:'Kerry Hotel Hong Kong',zh:'香港嘉里酒店',agoda:8.5,google:4.5,price:8200,
+     pros:'紅磡新型大型酒店、設施全新、海景房佳',cons:'距旺角/中環需轉乘',
+     roomKing:'Deluxe King',roomTwin:'Deluxe Twin',
+     agodaSlug:'kerry-hotel-hong-kong/hotel/hong-kong-hk.html'},
+    {name:'Mira Hong Kong',zh:'香港美麗華酒店',agoda:8.2,google:4.3,price:5500,
+     pros:'尖沙咀中心地帶、精品設計、CP值高',cons:'房型偏小',
+     roomKing:'Mira King',roomTwin:'Mira Twin',
+     agodaSlug:'the-mira-hong-kong/hotel/hong-kong-hk.html'}
+  ],
+  SIN:[
+    {name:'Raffles Hotel Singapore',zh:'新加坡萊佛士酒店',agoda:9.3,google:4.7,price:25000,
+     pros:'殖民地百年地標、全套房式設計、新加坡司令雞尾酒發源地',cons:'價位極高、房間面積寬大但部分設備傳統',
+     roomKing:'State Room King',roomTwin:'State Room Twin',
+     agodaSlug:'raffles-hotel-singapore/hotel/singapore-sg.html'},
+    {name:'Marina Bay Sands',zh:'濱海灣金沙酒店',agoda:9.0,google:4.6,price:18000,
+     pros:'新加坡地標天空泳池、直通購物中心、賭場娛樂',cons:'人潮眾多、部分設施需排隊',
+     roomKing:'Deluxe King',roomTwin:'Deluxe Twin',
+     agodaSlug:'marina-bay-sands/hotel/singapore-sg.html'},
+    {name:'Andaz Singapore',zh:'新加坡安達仕酒店',agoda:9.0,google:4.6,price:12000,
+     pros:'裝置藝術設計感強、Dhoby Ghaut捷運旁、屋頂泳池',cons:'部分旅客覺得服務稍不穩定',
+     roomKing:'Andaz King',roomTwin:'Andaz Twin',
+     agodaSlug:'andaz-singapore/hotel/singapore-sg.html'},
+    {name:'Oasia Hotel Downtown',zh:'歐亞市區酒店',agoda:8.8,google:4.5,price:8000,
+     pros:'垂直花園外觀、Tanjong Pagar捷運旁、商務區',cons:'附近週末餐廳多關閉',
+     roomKing:'Premier King',roomTwin:'Premier Twin',
+     agodaSlug:'oasia-hotel-downtown-singapore-by-far-east-hospitality/hotel/singapore-sg.html'},
+    {name:'Hotel G Singapore',zh:'新加坡G酒店',agoda:8.3,google:4.4,price:4500,
+     pros:'Little India地鐵旁、性價比高、設計感時尚年輕',cons:'房間偏小、周邊夜間較嘈雜',
+     roomKing:'Good King',roomTwin:'Good Twin',
+     agodaSlug:'hotel-g-singapore/hotel/singapore-sg.html'}
+  ]
+};
+
+// ═══════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════
+var MEM=null;
+function lsGet(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
+
+// ── 固定代辦事項（每次出差標準清單）──────────────────
+var DEFAULT_TODOS=[
+  {id:'d1',text:'確認護照效期（6個月以上）',done:false},
+  {id:'d2',text:'申請/確認目的地簽證',done:false},
+  {id:'d3',text:'訂房確認',done:false},
+  {id:'d4',text:'安排接送機派車',done:false},
+  {id:'d5',text:'通知財務差旅行程',done:false},
+  {id:'d6',text:'商旅險保險',done:false}
+];
+// 補齊既有行程中缺少的標準代辦（保留已完成狀態）
+function ensureTodos(trip){
+  if(!trip.todos) trip.todos=[];
+  DEFAULT_TODOS.forEach(function(dt){
+    var found=trip.todos.find(function(t){return t.text===dt.text;});
+    if(!found) trip.todos.push({id:dt.id+'_'+trip.id,text:dt.text,done:false});
+  });
+}
+
+var SEED_TRIPS=[];
+
+function getTrips(){
+  if(MEM!==null) return MEM;
+  // Always merge: take stored user data + any SEED_TRIPS not yet present
+  var stored=lsGet('gama_trips')||[];
+  var ids=new Set(stored.map(function(t){return t.id;}));
+  SEED_TRIPS.forEach(function(t){if(!ids.has(t.id)){stored.push(t);ids.add(t.id);}});
+  // Migrate: ensure every trip has the standard todo items
+  stored.forEach(function(t){ensureTodos(t);});
+  // Migrate: 將英文旅客名解析成中文名（修正 PDF 解析後未帶中文名的舊資料）
+  var migrated=false;
+  stored.forEach(function(t){
+    (t.passengers||[]).forEach(function(p,i){
+      // 如果 name 全是 ASCII（英文格式），嘗試找中文名
+      if(p.name && /^[A-Z\/\s]+$/.test(p.name)){
+        var emp=lookupEmpByEnName(p.name)||lookupEmpByEnName(p.nameEn);
+        if(emp){
+          t.passengers[i].name=emp.name;
+          if(!t.passengers[i].pp && emp.pp) t.passengers[i].pp=emp.pp;
+          if(!t.passengers[i].ppExp && emp.ppExp) t.passengers[i].ppExp=emp.ppExp;
+          if(!t.passengers[i].phone && emp.phone) t.passengers[i].phone=emp.phone;
+          if(!t.passengers[i].addr && emp.addr) t.passengers[i].addr=emp.addr;
+          migrated=true;
+        }
+      }
+    });
+  });
+  MEM=stored; lsSet('gama_trips',MEM); return MEM;
+}
+function saveTrips(){lsSet('gama_trips',MEM);}
+function addOrUpdateTrip(t){
+  var trips=getTrips(),idx=trips.findIndex(function(x){return x.id===t.id;});
+  if(idx>=0)trips[idx]=t; else trips.unshift(t);
+  saveTrips();
+}
+function removeTrip(id){MEM=getTrips().filter(function(t){return t.id!==id;});saveTrips();}
+
+// ═══════════════════════════════════════
+// SCREEN ROUTING
+// ═══════════════════════════════════════
+var curId=null;
+function go(id,doReset){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on');});
+  document.getElementById(id).classList.add('on');
+  window.scrollTo(0,0);
+  if(id==='sd'){renderDash();}
+  if(id==='sam'){renderAccountMgmt();}
+  // Only reset upload when explicitly requested (doReset!==false)
+  if(id==='su'&&doReset!==false){resetUpload();}
+}
+
+// ═══════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════
+function renderDash(){
+  var trips=getTrips(),el=document.getElementById('dash');
+  var upcoming=trips.filter(function(t){return t.status==='upcoming';}).length;
+  var h='<div class="hero"><h2 style="display:flex;align-items:center;gap:8px">'+icn('plane',20,'rgba(255,255,255,.85)')+' 出差管理</h2><p>共'+trips.length+'筆紀錄・'+upcoming+'筆即將出發</p></div>';
+  if(!trips.length){
+    h+='<div class="empty"><div class="eico">'+icn('plane',48,'#8b94b5')+'</div><h3>尚無出差紀錄</h3><p>點擊右下角 + 上傳機票</p></div>';
+    el.innerHTML=h; return;
+  }
+  trips.forEach(function(trip){
+    var out=trip.segs.find(function(s){return s.dir==='out';});
+    var inb=[].concat(trip.segs).reverse().find(function(s){return s.dir==='in';});
+    var names=trip.passengers.map(function(p){return p.name;}).join('、');
+    var done=trip.todos.filter(function(t){return t.done;}).length;
+    var bl=trip.status==='upcoming'?'b-up':trip.status==='active'?'b-ac':'b-ps';
+    var bl2=trip.status==='upcoming'?'即將出發':trip.status==='active'?'進行中':'已結束';
+    h+='<div class="tc">'+
+      '<div class="tc-hd"><div class="tc-flag">'+icn('plane',22,'#1e3560')+'</div><div>'+
+      '<div class="tc-dest">'+trip.destination+' <span class="badge '+bl+'">'+bl2+'</span></div>'+
+      '<div class="tc-ev">'+(trip.event||'')+'</div></div></div>'+
+      '<div class="tc-dates">'+
+      (out?'<span style="display:flex;align-items:center;gap:4px">'+icn('plane',12,'#8b94b5')+' 出發 '+out.dd+' '+out.dt+'</span>':'')+
+      (inb?'<span style="display:flex;align-items:center;gap:4px">'+icn('arrive',12,'#8b94b5')+' 返回 '+inb.ad+' '+inb.at+'</span>':'')+
+      '</div>'+
+      '<div class="tc-pax" style="display:flex;align-items:center;gap:6px">'+icn('person',13,'#8b94b5')+' '+names+' &nbsp;·&nbsp; '+icn('check',13,'#16a34a')+' '+done+'/'+trip.todos.length+' 完成</div>'+
+      '<div class="tc-acts">'+
+      '<button class="bs bo" onclick="openTrip(\''+trip.id+'\')">查看詳情</button>'+
+      '<button class="bs bp" style="display:flex;align-items:center;gap:6px" onclick="cpRpt(\''+trip.id+'\')">'+icn('tag',14,'#fff')+' 複製報告</button>'+
+      '</div></div>';
+  });
+  el.innerHTML=h;
+}
+function openTrip(id){
+  curId=id;
+  var trip=getTrips().find(function(t){return t.id===id;});
+  if(!trip) return;
+  showDetail(trip,false);
+}
+function showDetail(trip,isDraft){
+  document.getElementById('dtitle').textContent=trip.destination;
+  var out=trip.segs.find(function(s){return s.dir==='out';});
+  var inb=[].concat(trip.segs).reverse().find(function(s){return s.dir==='in';});
+  document.getElementById('dhero').innerHTML=
+    '<div style="font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px">'+icn('plane',22,'rgba(255,255,255,.9)')+' '+trip.destination+'</div>'+
+    '<div class="sub">'+(trip.event||'')+'</div>'+
+    '<div class="meta">'+
+    (out?'<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('plane',12,'rgba(255,255,255,.8)')+' 出發 '+out.dd+'</div>':'')+
+    (inb?'<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('arrive',12,'rgba(255,255,255,.8)')+' 返回 '+inb.ad+'</div>':'')+
+    '<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('person',12,'rgba(255,255,255,.8)')+' '+trip.passengers.length+' 人</div>'+
+    '<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('tag',12,'rgba(255,255,255,.8)')+' '+(trip.ref||'—')+'</div>'+
+    '</div>';
+  document.getElementById('draft-banner').style.display=isDraft?'flex':'none';
+  // reset tabs
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  document.querySelectorAll('.tc2').forEach(function(c){c.classList.remove('on');});
+  document.querySelector('[data-t="tf"]').classList.add('on');
+  document.getElementById('tf').classList.add('on');
+  // render all tabs immediately
+  rFlight(trip); rVisa(trip); rHotel(trip); rDispatch(trip); rTodo(trip); rEmployee(trip); rReport(trip);
+  go('sde');
+}
+var _tabOrder=['tf','tv','th','td','tt','te','tr'];
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on');});
+  document.querySelectorAll('.tc2').forEach(function(x){x.classList.remove('on');});
+  var btn=document.querySelector('[data-t="'+id+'"]');
+  if(btn){btn.classList.add('on');btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}
+  document.getElementById(id).classList.add('on');
+  if((id==='td'||id==='te')&&curId){
+    var trips=getTrips(),trip=trips.find(function(x){return x.id===curId;});
+    if(trip){if(id==='td')rDispatch(trip);else rEmployee(trip);}
+  }
+}
+document.getElementById('tabs').addEventListener('click',function(e){
+  var b=e.target.closest('.tab'); if(!b) return;
+  switchTab(b.dataset.t);
+});
+
+// ── 左右滑動切換頁籤 ─────────────────────────
+(function(){
+  var el=document.getElementById('sde');
+  var sx=0,sy=0,scrolling=false;
+  el.addEventListener('touchstart',function(e){
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; scrolling=false;
+  },{passive:true});
+  el.addEventListener('touchmove',function(e){
+    // 若垂直位移明顯大於水平，標記為捲動，不觸發切換
+    var dx=Math.abs(e.touches[0].clientX-sx), dy=Math.abs(e.touches[0].clientY-sy);
+    if(dy>dx) scrolling=true;
+  },{passive:true});
+  el.addEventListener('touchend',function(e){
+    if(scrolling) return;
+    var dx=e.changedTouches[0].clientX-sx;
+    var dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)<55||Math.abs(dy)>Math.abs(dx)*0.75) return;
+    var cur=document.querySelector('.tab.on');
+    if(!cur) return;
+    var idx=_tabOrder.indexOf(cur.dataset.t);
+    var next=dx<0?idx+1:idx-1;
+    if(next>=0&&next<_tabOrder.length) switchTab(_tabOrder[next]);
+  },{passive:true});
+})();
+
+// ─── DELETE (2-step, no confirm()) ──────
+var _delTimer=null, _delStep=0;
+function delTripStep(){
+  var btn=document.getElementById('del-btn');
+  if(_delStep===0){
+    _delStep=1;
+    btn.textContent='確認刪除？';
+    btn.classList.remove('bo'); btn.classList.add('bd');
+    _delTimer=setTimeout(function(){
+      _delStep=0; btn.textContent='🗑 刪除';
+      btn.classList.remove('bd'); btn.classList.add('bo');
+    },3000);
+  } else {
+    clearTimeout(_delTimer); _delStep=0;
+    removeTrip(curId); curId=null;
+    toast('已刪除'); go('sd');
+  }
+}
+
+// ═══════════════════════════════════════
+// FLIGHT TAB
+// ═══════════════════════════════════════
+function dow(d){try{return['日','一','二','三','四','五','六'][new Date(d).getDay()];}catch{return '';}}
+function rFlight(trip){
+  var out=trip.segs.filter(function(s){return s.dir==='out';});
+  var inb=trip.segs.filter(function(s){return s.dir==='in';});
+  var h='<div class="sh"><span>去程航班</span><span class="stag st-o">出發</span></div>';
+  out.forEach(function(s){h+=fCard(s,'out');});
+  if(inb.length){h+='<div class="sh"><span>回程航班</span><span class="stag st-i">返回</span></div>';}
+  inb.forEach(function(s){h+=fCard(s,'in');});
+  document.getElementById('tf').innerHTML=h||'<p style="color:var(--muted);font-size:13px">尚無航班資料</p>';
+}
+function fCard(s,dir){
+  var nd=s.ad&&s.dd&&s.ad!==s.dd?'<div class="flbl" style="color:var(--warn)">+1日 '+s.ad+'</div>':'';
+  return '<div class="fc"><div class="fc-hd">'+icn(dir==='out'?'plane':'arrive',14,'rgba(255,255,255,.9)')+'<span>'+s.dd+' (週'+dow(s.dd)+')</span></div>'+
+    '<div class="fc-bd"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">'+
+    '<span class="fn">'+s.fl+'</span><span class="fact">'+(s.ac2||'')+'</span><span class="fact">'+(s.cab||'')+'</span></div>'+
+    '<div class="ftimes"><div class="fep"><div class="code">'+s.dc+'</div><div class="ftime">'+s.dt+'</div><div class="flbl">'+s.dct+(s.dterm?' '+s.dterm:'')+'</div></div>'+
+    '<div class="farr"><div class="fdur">'+(s.dur||'')+'</div><div class="fline"></div></div>'+
+    '<div class="fep"><div class="code">'+s.ac+'</div><div class="ftime">'+s.at+'</div><div class="flbl">'+s.act+(s.aterm?' '+s.aterm:'')+'</div>'+nd+'</div></div>'+
+    '<div class="fft">'+(s.bag?'<span>'+s.bag+'</span>':'')+(s.dterm?'<span>出發 '+s.dterm+'</span>':'')+(s.aterm?'<span>抵達 '+s.aterm+'</span>':'')+'</div>'+
+    '</div></div>';
+}
+
+// ═══════════════════════════════════════
+// VISA TAB
+// ═══════════════════════════════════════
+function parseEnName(nameEn){
+  var n=(nameEn||'').replace(/\s*(MR|MS|MRS|DR)\.?\s*$/i,'').trim().toUpperCase();
+  var parts=n.split(/[,\/]/);
+  return {last:(parts[0]||'').trim(),first:(parts[1]||'').trim(),
+    gender:/MS|MRS/i.test(nameEn)?'FEMALE':'MALE'};
+}
+function fmtExpEn(d){
+  var mn=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  try{var dt=new Date(d);return ('0'+dt.getDate()).slice(-2)+'/'+mn[dt.getMonth()]+'/'+dt.getFullYear();}catch{return d||'';}
+}
+function buildVisaEn(p,trip){
+  // 從員工DB補齊資料（護照、住址等）
+  var emp=mergeEmpData(p);
+  var addrEn=p.addrEn||emp.addrEn||'';
+  var addr=addrEn||(p.addr||emp.addr||'');  // 優先用英文地址，沒有才用中文
+  var n=parseEnName(p.nameEn||emp.nameEn||'');
+  var segs2=trip.segs||[];
+  var out=segs2.find(function(s){return s.dir==='out';});
+  var inb=[].concat(segs2).reverse().find(function(s){return s.dir==='in';});
+  return [
+    'FAMILY NAME (SURNAME)  : '+n.last,
+    'GIVEN NAME (FIRST NAME): '+n.first,
+    'GENDER                 : '+n.gender,
+    'PASSPORT NUMBER        : '+(p.pp||''),
+    'PASSPORT EXPIRY DATE   : '+fmtExpEn(p.ppExp),
+    'NATIONALITY            : TAIWAN (ROC)',
+    'EMPLOYER               : GAMA TECHNOLOGY CO., LTD.',
+    'PURPOSE OF VISIT       : BUSINESS / CONFERENCE',
+    'INBOUND FLIGHT         : '+(out?out.fl+' '+out.dd:''),
+    'OUTBOUND FLIGHT        : '+(inb?inb.fl+' '+inb.dd:''),
+    'DESTINATION            : '+(trip.destination||''),
+    'EVENT / PURPOSE        : '+(trip.event||''),
+    'HOME ADDRESS           : '+addr,
+  ].join('\n');
+}
+function rVisa(trip){
+  var country=trip.country||'';
+  var db=VISA_DB[country]||VISA_DEFAULT;
+  var statusCls={'ok':'visa-ok','warn':'visa-warn','info':'visa-info'}[db.status]||'visa-info';
+
+  // Hero banner
+  var visaIconSvg=db.status==='ok'?icn('check',24,'#065f46'):icn('plane',24,'#92400e');
+  var h='<div class="visa-hero '+statusCls+'" style="display:flex;align-items:center;gap:10px">'+
+    visaIconSvg+
+    '<div style="flex:1">'+
+      '<div style="font-weight:700;font-size:15px">'+country+'</div>'+
+      '<div style="font-size:14px;margin-top:2px">'+db.title+'</div>'+
+    '</div>'+
+  '</div>';
+
+  // 簽證規定 card
+  h+='<div class="card" style="margin-top:0">'+
+    '<div class="ctitle">簽證規定</div>'+
+    '<div style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:10px">'+
+      (db.visaReq||db.title)+'</div>'+
+    '<div class="ig" style="margin-bottom:10px">'+
+      '<div class="ii"><label>可停留天數</label><span style="font-weight:700">'+db.duration+'</span></div>'+
+      '<div class="ii"><label>簽證費用</label><span style="font-weight:700">'+db.fee+'</span></div>'+
+      (db.validity&&db.validity!=='—'?'<div class="ii"><label>簽證有效期</label><span>'+db.validity+'</span></div>':'')+
+    '</div>'+
+    (db.applyUrl?'<a class="visa-link" href="'+db.applyUrl+'" target="_blank" style="display:inline-block;margin-bottom:10px">🔗 '+( db.applyLabel||'線上申請')+'</a>':'')+
+  '</div>';
+
+  // 入境規定 card
+  h+='<div class="card" style="margin-top:0">'+
+    '<div class="ctitle">入境規定</div>';
+  if(db.entryReq&&db.entryReq.length){
+    h+='<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">必備文件 / 入境條件</div>'+
+      '<ul class="visa-req">';
+    db.entryReq.forEach(function(r){h+='<li>'+r+'</li>';});
+    h+='</ul>';
+  }
+  if(db.notes&&db.notes.length){
+    h+='<div class="visa-notes" style="margin-top:8px">';
+    db.notes.forEach(function(n){h+='<div style="margin-bottom:4px">⚠ '+n+'</div>';});
+    h+='</div>';
+  }
+  h+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">';
+  if(db.mofaUrl){
+    h+='<a class="visa-link" href="'+db.mofaUrl+'" target="_blank">🏛 外交部領事事務局</a>';
+  }
+  h+='</div></div>';
+
+  // Per-passenger section
+  trip.passengers.forEach(function(p,pi){
+    var daysLeft=((new Date(p.ppExp||'2099-01-01')-new Date())/864e5);
+    var ppCls=daysLeft<90?'pp-danger':daysLeft<180?'pp-warn':'pp-ok';
+    var warn=daysLeft<180;
+    var enId='en_'+pi;
+    var enData=buildVisaEn(p,trip);
+    h+='<div class="pc">'+
+      '<div class="ph"><div class="pav">'+(p.name?p.name.charAt(0):'?')+'</div>'+
+      '<div><div class="pn">'+(p.name||'')+'</div><div class="pen">'+(p.nameEn||'')+'</div></div></div>'+
+      '<div class="pb"><div class="ig">'+
+      '<div class="ii"><label>護照號碼</label><span>'+(p.pp||'—')+'</span></div>'+
+      '<div class="ii"><label>護照效期</label><span class="'+ppCls+'">'+(p.ppExp||'—')+(warn?' ⚠️':'')+'</span></div>'+
+      '<div class="ii"><label>手機</label><span>'+(p.phone||'—')+'</span></div>'+
+      '<div class="ii"><label>票號</label><span style="font-size:11px">'+(p.ticket||'—')+'</span></div>'+
+      '</div><div style="margin-top:8px;font-size:12px;color:var(--muted)">'+
+      (p.addr?'<div>🏠 '+p.addr+'</div>':'')+
+      (p.addrEn?'<div style="color:#1e3560;font-weight:600">🌐 '+p.addrEn+'</div>':
+        '<div style="color:var(--warn)">⚠ 英文地址未填 → 請在員工頁籤編輯資料</div>')+
+      '</div>'+
+      '<div class="en-box"><div class="en-hd"><span class="en-title">🇺🇸 簽證申請英文資料</span>'+
+      '<button class="cpb" onclick="cpText(document.getElementById(\''+enId+'\').textContent)">複製</button></div>'+
+      '<pre class="en-data" id="'+enId+'">'+enData+'</pre></div>'+
+      '</div></div>';
+  });
+  document.getElementById('tv').innerHTML=h;
+}
+
+// ═══════════════════════════════════════
+// HOTEL CONFIRMATION UPLOAD & PARSE
+// ═══════════════════════════════════════
+var _hotelUploadTripId=null;
+var _pendingHotelData=null;
+
+// 各月份英文縮寫/全名對照
+var HC_MON={JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',
+  JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12',
+  JANUARY:'01',FEBRUARY:'02',MARCH:'03',APRIL:'04',JUNE:'06',
+  JULY:'07',AUGUST:'08',SEPTEMBER:'09',OCTOBER:'10',NOVEMBER:'11',DECEMBER:'12'};
+
+function _hcNormDate(s){
+  if(!s) return '';
+  s=s.trim().toUpperCase().replace(/\s+/g,' ');
+  var m;
+  // YYYY-MM-DD
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return s;
+  // DD MMM(M) YYYY
+  m=s.match(/^(\d{1,2})\s+([A-Z]{3,9})\s+(\d{4})$/);
+  if(m&&HC_MON[m[2]]) return m[3]+'-'+HC_MON[m[2]]+'-'+(m[1].length<2?'0'+m[1]:m[1]);
+  // MMM(M) DD, YYYY
+  m=s.match(/^([A-Z]{3,9})\s+(\d{1,2}),?\s+(\d{4})$/);
+  if(m&&HC_MON[m[1]]) return m[3]+'-'+HC_MON[m[1]]+'-'+(m[2].length<2?'0'+m[2]:m[2]);
+  // DD/MM/YYYY
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return m[3]+'-'+(m[2].length<2?'0'+m[2]:m[2])+'-'+(m[1].length<2?'0'+m[1]:m[1]);
+  // YYYY年MM月DD日
+  m=s.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日$/);
+  if(m) return m[1]+'-'+(m[2].length<2?'0'+m[2]:m[2])+'-'+(m[3].length<2?'0'+m[3]:m[3]);
+  return '';
+}
+
+// 從原始文字萃取訂房確認單的欄位
+function parseHotelConfirmation(text){
+  var t=(text||'').replace(/\r/g,'\n');
+  var r={name:'',cin:'',cout:'',nights:0,price:0,ref:''};
+
+  // 日期 pattern（支援多種格式）
+  var DR='(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[\\/ ](?:[A-Za-z]{3,9})[\\/ ]\\d{2,4}|[A-Za-z]{3,9}[\\/ ,]\\s*\\d{1,2},?\\s*\\d{4}|\\d{4}年\\d{1,2}月\\d{1,2}日|\\d{1,2}\\/\\d{1,2}\\/\\d{4})';
+
+  function findDate(re){
+    var m=t.match(re);
+    if(!m) return '';
+    for(var i=1;i<m.length;i++){var d=_hcNormDate(m[i]);if(d) return d;}
+    return '';
+  }
+
+  // 入住日期
+  r.cin=findDate(new RegExp('(?:check[\\-\\s]?in|入住(?:日期)?)[\\s:：日年月]*'+DR,'i'));
+  // 退房日期
+  r.cout=findDate(new RegExp('(?:check[\\-\\s]?out|退房(?:日期)?|離店(?:日期)?)[\\s:：日年月]*'+DR,'i'));
+
+  // 住宿晚數
+  var nm=t.match(/(\d+)\s*(?:nights?|晚|泊)/i);
+  if(nm) r.nights=parseInt(nm[1],10);
+  // 若解析到入退房日期則計算晚數
+  if(!r.nights&&r.cin&&r.cout){
+    var diff=Math.round((new Date(r.cout)-new Date(r.cin))/864e5);
+    if(diff>0&&diff<90) r.nights=diff;
+  }
+
+  // 總金額（優先找 Total/合計 行，再找 NTD/NT$ 數字）
+  var pm=t.match(/(?:total|grand total|合計|總(?:計|金額|價格?)|amount due)[^\n\d]{0,20}(?:NTD|NT\$|TWD|台幣|NTW)?\s*([0-9,]{3,10})/i)
+    ||t.match(/(?:NTD|NT\$|TWD|台幣)\s*([0-9,]{3,10})/i);
+  if(pm) r.price=parseInt(pm[1].replace(/,/g,''),10)||0;
+
+  // 訂房確認編號
+  var rfm=t.match(/(?:booking\s*(?:id|no\.?|number|#)|confirmation\s*(?:no\.?|number|#|code)|agoda\s*(?:booking\s*id|id)|訂房(?:編號|號碼)|確認(?:號碼|編號|碼))[\\s:：#]*([A-Z0-9\-]{4,20})/i);
+  if(rfm) r.ref=rfm[1].trim();
+
+  // 飯店名稱
+  var nmatch=t.match(/(?:hotel|property|accommodation|飯店|酒店|旅館|住宿(?:名稱|飯店)?)\s*[：:\s]\s*([^\n,，。]{4,60})/i)
+    ||t.match(/(?:你預訂了|您已預訂了|您的訂房|your stay at)\s+([^\n,，。]{4,60})/i);
+  if(nmatch){
+    var raw=nmatch[1].trim().replace(/\s+/g,' ').replace(/[,，].*$/,'').trim();
+    if(raw.length>=3) r.name=raw;
+  }
+
+  return r;
+}
+
+function triggerHotelUpload(tripId){
+  _hotelUploadTripId=tripId;
+  var inp=document.getElementById('hci');
+  if(inp){inp.value='';inp.click();}
+}
+
+function _onHotelFileSelected(){
+  var inp=document.getElementById('hci');
+  var file=inp&&inp.files[0];
+  if(!file||!_hotelUploadTripId) return;
+  var tripId=_hotelUploadTripId;
+  var loading=document.getElementById('loading');
+  if(loading) loading.style.display='flex';
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var isPdf=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+    var promise=isPdf?extractTextFromPDF(ev.target.result,99):Promise.resolve(new TextDecoder().decode(new Uint8Array(ev.target.result)));
+    promise.then(function(txt){
+      if(loading) loading.style.display='none';
+      var parsed=parseHotelConfirmation(txt);
+      _pendingHotelData=parsed;
+      _showHotelConfirmPreview(tripId,parsed,txt);
+    }).catch(function(e){
+      if(loading) loading.style.display='none';
+      toast('❌ 解析失敗：'+(e.message||e));
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function _showHotelConfirmPreview(tripId,parsed,rawText){
+  var hasData=parsed.name||parsed.cin||parsed.cout||parsed.price;
+  var card='';
+  if(!hasData){
+    card='<div class="card" style="border-left:4px solid var(--danger);margin-bottom:0">'+
+      '<div class="ctitle">無法辨識訂房資訊</div>'+
+      '<p style="font-size:13px;color:var(--muted);margin-bottom:8px">請確認檔案為訂房確認單（Agoda/Booking.com/飯店直接確認）</p>'+
+      '<div style="font-size:11px;background:var(--bg);border-radius:6px;padding:8px;max-height:100px;overflow:auto;color:var(--muted)">'+
+        (rawText||'').slice(0,400).replace(/</g,'&lt;')+'</div>'+
+      '<button class="bs bo" style="width:100%;margin-top:10px" onclick="rHotel(getTrips().find(function(t){return t.id===\''+tripId+'\';}))">← 返回</button>'+
+      '</div>';
+  } else {
+    var rows=[
+      {label:'飯店名稱',val:parsed.name},
+      {label:'入住日期',val:parsed.cin},
+      {label:'退房日期',val:parsed.cout},
+      {label:'住宿晚數',val:parsed.nights?(parsed.nights+' 晚'):''},
+      {label:'總金額',val:parsed.price?('NT$ '+Number(parsed.price).toLocaleString()):''},
+      {label:'訂房編號',val:parsed.ref}
+    ].filter(function(row){return row.val;});
+    card='<div class="card" style="border-left:4px solid var(--ok);margin-bottom:0">'+
+      '<div class="ctitle">解析結果 — 請確認後匯入</div>'+
+      '<table style="width:100%;font-size:13px;border-collapse:collapse;margin-bottom:12px">';
+    rows.forEach(function(row){
+      card+='<tr style="border-bottom:1px solid var(--border)">'+
+        '<td style="padding:7px 8px;color:var(--muted);white-space:nowrap;width:80px">'+row.label+'</td>'+
+        '<td style="padding:7px 8px;font-weight:600">'+row.val+'</td></tr>';
+    });
+    card+='</table>'+
+      '<div style="display:flex;gap:8px">'+
+      '<button class="bs bp" style="flex:2" onclick="applyHotelConfirmation(\''+tripId+'\')">確認匯入</button>'+
+      '<button class="bs bo" style="flex:1" onclick="rHotel(getTrips().find(function(t){return t.id===\''+tripId+'\';}))">✕ 取消</button>'+
+      '</div></div>';
+  }
+  // Prepend preview to top of hotel tab, keep rest below
+  var el=document.getElementById('th');
+  if(el){
+    // Remove existing preview if any
+    var old=el.querySelector('.hotel-preview');
+    if(old) el.removeChild(old);
+    var wrap=document.createElement('div');
+    wrap.className='hotel-preview';
+    wrap.style.marginBottom='12px';
+    wrap.innerHTML=card;
+    el.insertBefore(wrap,el.firstChild);
+    el.scrollTop=0;
+    window.scrollTo(0,0);
+  }
+}
+
+function applyHotelConfirmation(tripId){
+  var parsed=_pendingHotelData;
+  if(!parsed){toast('❌ 無待匯入資料');return;}
+  var trips=getTrips();
+  var trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip){toast('❌ 找不到行程');return;}
+  if(!trip.hotel) trip.hotel={};
+  if(parsed.name)   trip.hotel.name=parsed.name;
+  if(parsed.cin)    trip.hotel.cin=parsed.cin;
+  if(parsed.cout)   trip.hotel.cout=parsed.cout;
+  if(parsed.nights) trip.hotel.nights=parsed.nights;
+  if(parsed.price)  trip.hotel.price=parsed.price;
+  if(parsed.ref)    trip.hotel.ref=parsed.ref;
+  trip.hotel.booked=true;
+  saveTrips();
+  _pendingHotelData=null;
+  // 同步完成訂房確認待辦事項
+  if(trip.todos){
+    trip.todos.forEach(function(td){if(td.text.indexOf('訂房')>=0) td.done=true;});
+    saveTrips();
+  }
+  toast('✅ 訂房資料已匯入：'+(parsed.name||'確認單'));
+  rHotel(trip);
+}
+
+// ═══════════════════════════════════════
+// HOTEL TAB — with recommendations table
+// ═══════════════════════════════════════
+// 房型分配：回傳 [{roomName, type:'king'|'twin', names:[...], note}]
+function getRoomPlanDetail(passengers, hotel){
+  if(!passengers||!passengers.length) return [];
+  var hasYZ=passengers.some(function(p){return (p.name||'').indexOf('嚴志軒')>=0;});
+  var rooms=[];
+  if(hasYZ){
+    var yz=passengers.filter(function(p){return (p.name||'').indexOf('嚴志軒')>=0;});
+    rooms.push({roomName:hotel.roomKing,type:'king',names:yz.map(function(p){return p.name;}),note:'單獨一大床'});
+    var others=passengers.filter(function(p){return (p.name||'').indexOf('嚴志軒')<0;});
+    var i=0;
+    while(i<others.length){
+      if(i+1<others.length){
+        rooms.push({roomName:hotel.roomTwin,type:'twin',names:[others[i].name,others[i+1].name],note:'兩小床'});
+        i+=2;
+      } else {
+        rooms.push({roomName:hotel.roomKing,type:'king',names:[others[i].name],note:'一大床'});
+        i++;
+      }
+    }
+  } else {
+    var i=0;
+    while(i<passengers.length){
+      if(i+1<passengers.length){
+        rooms.push({roomName:hotel.roomTwin,type:'twin',names:[passengers[i].name,passengers[i+1].name],note:'兩小床'});
+        i+=2;
+      } else {
+        rooms.push({roomName:hotel.roomKing,type:'king',names:[passengers[i].name],note:'一大床'});
+        i++;
+      }
+    }
+  }
+  return rooms;
+}
+function getRoomPlan(passengers, hotel){
+  var rooms=getRoomPlanDetail(passengers,hotel);
+  if(!rooms.length) return '無旅客資料';
+  return rooms.map(function(r){return r.names.join('、')+' → '+r.roomName+' （'+r.note+'）';}).join('\n');
+}
+function hotelAgodaUrl(hotel,cin,cout,adults){
+  var base='https://www.agoda.com/'+hotel.agodaSlug+'?';
+  var p='checkIn='+(cin||'')+'&los='+(cin&&cout?Math.round((new Date(cout)-new Date(cin))/864e5):1)+'&adults='+(adults||2)+'&rooms=1';
+  return base+p;
+}
+function rHotel(trip){
+  var h=trip.hotel||{};
+  var destCode=trip.segs.filter(function(s){return s.dir==='out';}).pop();
+  destCode=destCode?destCode.ac:'';
+  var allHotels=HOTEL_DB[destCode]||[];
+  // 篩選 Agoda ≥ 8.0 且 Google ≥ 4.0，依 Agoda 評分降序，取前 5
+  var hotels=allHotels.filter(function(ht){return ht.agoda>=8.0&&ht.google>=4.0;})
+    .sort(function(a,b){return b.agoda-a.agoda;}).slice(0,5);
+  var adults=trip.passengers.length||2;
+  var hasYZ=trip.passengers.some(function(p){return (p.name||'').indexOf('嚴志軒')>=0;});
+
+  // ── 上傳訂房確認單 ──
+  var html='<div class="card" style="margin-bottom:12px;border-left:4px solid var(--pri)">'+
+    '<div class="ctitle">上傳訂房確認單</div>'+
+    '<p style="font-size:12px;color:var(--muted);margin-bottom:10px">上傳 Agoda / Booking.com / 飯店確認 PDF，自動匯入飯店名稱、日期、金額</p>'+
+    '<button class="bs bp" style="width:100%;font-size:14px;padding:10px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="triggerHotelUpload(\''+trip.id+'\')">'+
+      icn('hotel',16,'#fff')+' 選取確認單 PDF</button>'+
+    '</div>';
+
+  // ── 已訂房資訊 ──
+  html+='<div class="hc">'+
+    '<div class="hn">'+(h.name||'尚未設定')+'</div>'+
+    '<div class="hm">'+
+    (h.cin?'<span>入住 '+h.cin+'</span>':'')+
+    (h.cout?'<span>退房 '+h.cout+'</span>':'')+
+    (h.nights?'<span>'+h.nights+' 晚</span>':'')+
+    '</div>'+
+    (h.price?'<div class="hp">NT$ '+Number(h.price).toLocaleString()+'<small> / '+adults+' 人</small></div>':'')+
+    '<div class="hs '+(h.booked?'ok':'ng')+'">'+(h.booked?'已確認訂房':'訂房進行中')+'</div>'+
+    '</div>';
+
+  if(hotels.length){
+    // ── 房型分配卡（依第一間飯店房型為範例顯示人員分配）──
+    var sampleHotel=hotels[0];
+    var rooms=getRoomPlanDetail(trip.passengers,sampleHotel);
+    html+='<div class="card">'+
+      '<div class="ctitle">房型分配規則</div>'+
+      (hasYZ?'<div style="font-size:12px;background:#fef3c7;border-radius:6px;padding:8px 10px;margin-bottom:8px;color:#92400e">名單含<b>嚴志軒</b>：嚴志軒單獨一大床，其餘人員依人數分配兩小床</div>':'')+
+      '<div class="room-info" style="padding:0">';
+    if(rooms.length){
+      html+='<table style="width:100%;font-size:12px;border-collapse:collapse">';
+      rooms.forEach(function(r,i){
+        html+='<tr style="border-bottom:1px solid var(--border)">'+
+          '<td style="padding:8px 10px;width:32px;font-weight:700;color:var(--muted)">'+( i+1)+'</td>'+
+          '<td style="padding:8px 6px;font-weight:600">'+r.names.join('、')+'</td>'+
+          '<td style="padding:8px 6px;color:var(--pri);font-weight:700">'+r.roomName+'</td>'+
+          '<td style="padding:8px 10px;color:var(--muted)">'+(r.type==='king'?'一大床':'兩小床')+'</td>'+
+          '</tr>';
+      });
+      html+='</table>';
+    }
+    html+='</div><div style="font-size:11px;color:var(--muted);margin-top:8px;padding:0 4px">* 房型名稱依各飯店不同，以下表格中均以飯店實際房型名稱為準</div></div>';
+
+    // ── 推薦飯店表格（5欄）──
+    html+='<div class="card"><div class="ctitle">推薦飯店（'+trip.destination+'）</div>'+
+      '<p style="font-size:12px;color:var(--muted);margin-bottom:10px">篩選條件：Agoda ≥ 8.0 · Google ≥ 4.0 · 依評分降序，共 '+hotels.length+' 筆</p>'+
+      '<div class="htbl-wrap"><table class="htbl">'+
+      '<tr><th>#</th><th>飯店名稱</th><th>優點</th><th>缺點</th><th>價格（NT$/晚）</th><th>Agoda 訂房</th></tr>';
+    hotels.forEach(function(ht,i){
+      var cin=h.cin||'', cout=h.cout||'';
+      var url=hotelAgodaUrl(ht,cin,cout,adults);
+      var roomRows=getRoomPlanDetail(trip.passengers,ht);
+      var roomHtml=roomRows.map(function(r){
+        return '<div style="margin-bottom:3px">'+
+          '<span style="font-weight:600">'+r.names.join('、')+'</span>'+
+          '<br><span style="color:var(--pri);font-size:10px">'+r.roomName+'</span>'+
+          ' <span style="color:var(--muted);font-size:10px">'+(r.type==='king'?'一大床':'兩小床')+'</span>'+
+          '</div>';
+      }).join('');
+      html+='<tr>'+
+        '<td style="font-weight:700;color:var(--muted)">'+(i+1)+'</td>'+
+        '<td>'+
+          '<div style="font-weight:700;font-size:13px">'+ht.zh+'</div>'+
+          '<div style="font-size:10px;color:var(--muted);margin-bottom:4px">'+ht.name+'</div>'+
+          '<div style="font-size:10px;color:var(--ok);font-weight:600">Agoda '+ht.agoda+' ★ &nbsp; Google '+ht.google+'</div>'+
+          (roomHtml?'<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">'+roomHtml+'</div>':'')+
+        '</td>'+
+        '<td class="pros" style="font-size:12px">'+ht.pros+'</td>'+
+        '<td class="cons" style="font-size:12px">'+ht.cons+'</td>'+
+        '<td class="price-cell">NT$'+ht.price.toLocaleString()+'<br><span style="font-size:10px;font-weight:400;color:var(--muted)">/晚</span></td>'+
+        '<td class="link-cell"><a href="'+url+'" target="_blank">Agoda 訂房</a></td>'+
+        '</tr>';
+    });
+    html+='</table></div>'+
+      '<p style="font-size:11px;color:var(--muted);margin-top:8px">* 價格為參考均價，實際依 Agoda 即時報價為準。連結已帶入入住退房日期及人數。</p>'+
+      '</div>';
+  } else {
+    // Fallback search links
+    var agoda='https://www.agoda.com/search?textToSearch='+encodeURIComponent(trip.destination)+
+      (h.cin?'&checkIn='+h.cin:'')+(h.cout?'&checkOut='+h.cout:'')+'&adults='+adults+'&rooms=1';
+    var booking='https://www.booking.com/search.html?ss='+encodeURIComponent(trip.destination)+
+      (h.cin?'&checkin='+h.cin:'')+(h.cout?'&checkout='+h.cout:'')+'&group_adults='+adults+'&no_rooms=1&lang=zh-tw';
+    var gDate=h.cin&&h.cout?'&dates='+h.cin.replace(/-/g,'')+','+h.cout.replace(/-/g,''):'';
+    var google='https://www.google.com/travel/hotels?q='+encodeURIComponent(trip.destination)+gDate;
+    html+='<div class="card"><div class="ctitle">搜尋推薦飯店</div>'+
+      '<div class="hlinks">'+
+      '<a class="hlink" href="'+agoda+'" target="_blank">'+icn('hotel',18,'#1e3560')+'<div>Agoda 搜尋<sub>'+trip.destination+' · 入住 '+(h.cin||'—')+'</sub></div><span style="margin-left:auto">›</span></a>'+
+      '<a class="hlink" href="'+booking+'" target="_blank">'+icn('hotel',18,'#1e3560')+'<div>Booking.com<sub>繁中介面</sub></div><span style="margin-left:auto">›</span></a>'+
+      '<a class="hlink" href="'+google+'" target="_blank">'+icn('hotel',18,'#1e3560')+'<div>Google Hotels<sub>比較各平台價格</sub></div><span style="margin-left:auto">›</span></a>'+
+      '</div></div>';
+  }
+  document.getElementById('th').innerHTML=html;
+}
+
+// ═══════════════════════════════════════
+// DISPATCH TAB — with address selector + LINE share
+// ═══════════════════════════════════════
+var GAMA_COMPANY_ADDR='台中市西屯區工業三十八路210號（嘉碼科技）';
+var _dispAddrChoice={};   // {passengerName: 'home'|'company'}
+var _dispTripId=null;
+
+function rDispatch(trip){
+  _dispTripId=trip.id;
+  var out=trip.segs.find(function(s){return s.dir==='out';});
+  var inb=[].concat(trip.segs).reverse().find(function(s){return s.dir==='in';});
+
+  // Init address choices (default: home)
+  trip.passengers.forEach(function(p){
+    if(!_dispAddrChoice[p.name]) _dispAddrChoice[p.name]='home';
+  });
+
+  var addrSelector='<div class="card" style="padding-bottom:8px">'+
+    '<div class="ctitle" style="margin-bottom:8px">接送地址選擇</div>';
+  trip.passengers.forEach(function(p){
+    var m=mergeEmpData(p);
+    var cur=_dispAddrChoice[p.name]||'home';
+    addrSelector+=
+      '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--border)">'+
+        '<div class="ep-av" style="width:28px;height:28px;font-size:12px;flex-shrink:0">'+m.name.charAt(0)+'</div>'+
+        '<div style="flex:1">'+
+          '<div style="font-size:13px;font-weight:600;margin-bottom:4px">'+m.name+'</div>'+
+          '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+            '<button onclick="setDispAddr(\''+m.name+'\',\'home\')" '+
+              'style="padding:4px 10px;border-radius:6px;border:1.5px solid '+(cur==='home'?'var(--pri)':'var(--border)')+';'+
+              'background:'+(cur==='home'?'var(--pri)':'transparent')+';color:'+(cur==='home'?'#fff':'var(--fg)')+';font-size:12px;cursor:pointer">'+
+              '住家'+(m.addr?' <span style="font-size:10px;opacity:.8">'+'（'+m.addr.slice(0,8)+'…）</span>':'（未設定）')+'</button>'+
+            '<button onclick="setDispAddr(\''+m.name+'\',\'company\')" '+
+              'style="padding:4px 10px;border-radius:6px;border:1.5px solid '+(cur==='company'?'var(--pri)':'var(--border)')+';'+
+              'background:'+(cur==='company'?'var(--pri)':'transparent')+';color:'+(cur==='company'?'#fff':'var(--fg)')+';font-size:12px;cursor:pointer">'+
+              '公司</button>'+
+          '</div>'+
+          '<div style="font-size:11px;color:var(--muted);margin-top:3px">'+
+            (cur==='home'
+              ? (m.addr||'<span style="color:var(--warn)">住家地址未填，請至員工頁籤補充</span>')
+              : GAMA_COMPANY_ADDR)+
+          '</div>'+
+          '<div style="font-size:11px;margin-top:2px;display:flex;align-items:center;gap:4px">'+
+            icn('person',11,'#8b94b5')+( m.phone||'<span style="color:var(--warn)">手機未填 — 請至員工頁籤補充</span>')+
+          '</div>'+
+        '</div>'+
+      '</div>';
+  });
+  addrSelector+='</div>';
+
+  var st=buildSend(trip,out), pt=buildPick(trip,inb);
+
+  document.getElementById('td').innerHTML=
+    addrSelector+
+    '<div class="dc"><div class="dh"><span class="dt" style="display:flex;align-items:center;gap:6px">'+icn('car',14,'#92400e')+' 送機派車單</span>'+
+    '<div class="dh-btns">'+
+    '<button class="cpb" style="display:flex;align-items:center;gap:5px" onclick="cpEl(\'ds\')">'+icn('tag',12,'var(--pri)')+' 複製</button>'+
+    '<button class="lineb" style="display:flex;align-items:center;gap:5px" onclick="lineShare(\'ds\')">'+icn('arrive',12,'#fff')+' LINE 傳送</button>'+
+    '</div></div><pre class="db" id="ds">'+esc(st)+'</pre></div>'+
+    '<div class="dc"><div class="dh"><span class="dt" style="display:flex;align-items:center;gap:6px">'+icn('arrive',14,'#92400e')+' 接機派車單</span>'+
+    '<div class="dh-btns">'+
+    '<button class="cpb" style="display:flex;align-items:center;gap:5px" onclick="cpEl(\'dp\')">'+icn('tag',12,'var(--pri)')+' 複製</button>'+
+    '<button class="lineb" style="display:flex;align-items:center;gap:5px" onclick="lineShare(\'dp\')">'+icn('arrive',12,'#fff')+' LINE 傳送</button>'+
+    '</div></div><pre class="db" id="dp">'+esc(pt)+'</pre></div>'+
+    '<div class="card" style="font-size:13px;line-height:1.9">'+
+    '<div style="font-weight:700;margin-bottom:6px">📲 LINE 傳送說明</div>'+
+    '<div style="color:var(--fg)"><b>📱 手機（建議方式）</b><br>'+
+    '點「LINE 傳送」→ LINE App 自動開啟 → 選擇車行聯絡人或群組 → 確認送出</div>'+
+    '<div style="margin-top:8px;color:var(--fg)"><b>🖥 電腦</b><br>'+
+    '① 點「📋 複製」先複製派車單文字<br>'+
+    '② 開啟 LINE 電腦版（需先安裝）<br>'+
+    '③ 選擇車行對話 → 貼上 → 送出</div>'+
+    '<div style="margin-top:8px;font-size:11px;color:var(--muted)">LINE 電腦版下載：<a href="https://line.me/zh-hant/download" target="_blank" style="color:var(--pri)">line.me/zh-hant/download</a></div>'+
+    '</div>';
+}
+
+function lineShare(id){
+  var text=document.getElementById(id).textContent;
+  // Try to copy to clipboard first as fallback
+  if(navigator.clipboard){navigator.clipboard.writeText(text).catch(function(){});}
+  var isMobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
+  if(isMobile){
+    var url='https://line.me/R/share?text='+encodeURIComponent(text);
+    window.open(url,'_blank');
+    toast('📲 LINE 已開啟，請選擇車行聯絡人');
+  } else {
+    // Desktop: copy + open LINE
+    cpText(text);
+    window.open('https://line.me/R/share?text='+encodeURIComponent(text),'_blank');
+    toast('📋 已複製 + 嘗試開啟 LINE（電腦版需安裝）');
+  }
+}
+
+function setDispAddr(name,type){
+  _dispAddrChoice[name]=type;
+  var trips=getTrips(), trip=trips.find(function(t){return t.id===_dispTripId;});
+  if(trip) rDispatch(trip);
+}
+
+function getDispAddr(p){
+  var m=mergeEmpData(p);
+  var choice=_dispAddrChoice[p.name]||'home';
+  return choice==='company' ? GAMA_COMPANY_ADDR : (m.addr||'—');
+}
+function shareViaLINE(id){
+  var text=document.getElementById(id).textContent;
+  var url='https://line.me/R/share?text='+encodeURIComponent(text);
+  window.open(url,'_blank');
+  toast('已開啟 LINE 分享 📲');
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function adjTime(t,m){
+  try{var p=t.split(':').map(Number),tot=p[0]*60+p[1]+m,r=((tot%1440)+1440)%1440;
+  return ('0'+Math.floor(r/60)).slice(-2)+':'+('0'+(r%60)).slice(-2);}catch{return t;}
+}
+function dow(d){try{return['日','一','二','三','四','五','六'][new Date(d).getDay()];}catch{return '';}}
+// 將旅客依地址分組，同地址合併：人員+手機 在上，地址在下
+function groupByAddr(trip){
+  var groups=[], addrMap={};
+  trip.passengers.forEach(function(p){
+    var m=mergeEmpData(p);
+    var addr=getDispAddr(p);
+    var isCompany=(_dispAddrChoice[p.name]||'home')==='company';
+    var key=addr+'|'+(isCompany?'c':'h');
+    if(!addrMap[key]){
+      addrMap[key]={addr:addr,isCompany:isCompany,people:[]};
+      groups.push(addrMap[key]);
+    }
+    addrMap[key].people.push({name:p.name,phone:m.phone||'—'});
+  });
+  return groups;
+}
+function toMD(d){try{var p=(d||'').split('-');return parseInt(p[1],10)+'/'+parseInt(p[2],10);}catch(e){return d||'';}}
+function termName(t){return({'1':'第一航廈','2':'第二航廈','3':'第三航廈'})[t]||'';}
+function airlineName(fl){
+  var m={'CI':'中華航空','BR':'長榮航空','KE':'大韓航空','OZ':'韓亞航空','CX':'國泰航空',
+         'JL':'日本航空','NH':'全日空','SQ':'新加坡航空','MH':'馬來西亞航空','TG':'泰國航空',
+         'IT':'台灣虎航','B7':'立榮航空','AE':'華信航空','EK':'阿聯酋航空','QR':'卡達航空'};
+  var code=(fl||'').match(/^([A-Za-z]{2})/);
+  var nm=code?(m[code[1].toUpperCase()]||''):'';
+  return nm+fl;
+}
+function buildSend(trip,seg){
+  if(!seg) return '（無去程航班資料）';
+  var n=trip.passengers.length;
+  var term=termName(seg.dterm||'');
+  var flFull=airlineName(seg.fl);
+  var pickTime=adjTime(seg.dt,-150);
+  var lines=[
+    toMD(seg.dd)+'（星期'+dow(seg.dd)+'）'+pickTime+'桃園機場'+term+'送機 '+flFull+' '+seg.dt+'班機起飛',
+    n+'大人 '+n+'件行李 不指定進口',
+    '上車：'
+  ];
+  var groups=groupByAddr(trip),idx=1;
+  groups.forEach(function(g){
+    g.people.forEach(function(person){
+      lines.push(idx+'.'+person.name+' '+person.phone);
+      idx++;
+    });
+    lines.push(g.addr);
+  });
+  lines.push('下車：');
+  lines.push('桃園機場'+term+' '+flFull);
+  lines.push('備註：開車平穩、免簽免收、到點請電話聯繫客人、乘客上車請確認下車地址');
+  return lines.join('\n');
+}
+function buildPick(trip,seg){
+  if(!seg) return '（無回程航班資料）';
+  var n=trip.passengers.length;
+  var term=termName(seg.aterm||'');
+  var flFull=airlineName(seg.fl);
+  var lines=[
+    toMD(seg.ad)+'（星期'+dow(seg.ad)+'）'+seg.at+'桃園機場'+term+'接機 '+flFull+' '+seg.at+'班機抵台',
+    n+'大人 '+n+'件行李 不指定出口',
+    '上車：',
+    '桃園機場'+term+' '+flFull,
+    '下車：'
+  ];
+  var groups=groupByAddr(trip),idx=1;
+  groups.forEach(function(g){
+    g.people.forEach(function(person){
+      lines.push(idx+'.'+person.name+' '+person.phone);
+      idx++;
+    });
+    lines.push(g.addr);
+  });
+  lines.push('備註：開車平穩、免簽免收、到點請電話聯繫客人、乘客上車請確認下車地址');
+  return lines.join('\n');
+}
+function cpEl(id){cpText(document.getElementById(id).textContent);}
+
+// ═══════════════════════════════════════
+// TODO TAB — with calendar & delete
+// ═══════════════════════════════════════
+function calUrl(trip,todoText){
+  var out=trip.segs.find(function(s){return s.dir==='out';});
+  var dd=(out&&out.dd?out.dd:'').replace(/-/g,'');
+  if(!dd) return null;
+  // reminder the day before at 09:00
+  var reminderDate=dd;
+  try{
+    var d=new Date(out.dd); d.setDate(d.getDate()-1);
+    reminderDate=d.toISOString().slice(0,10).replace(/-/g,'');
+  }catch{}
+  var start=reminderDate+'T090000', end=reminderDate+'T093000';
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE'+
+    '&text='+encodeURIComponent('[差旅提醒] '+todoText)+
+    '&dates='+start+'/'+end+
+    '&details='+encodeURIComponent('出差待辦：'+todoText+'\n行程：'+trip.event+'\n出發：'+(out?out.dd:''));
+}
+function rTodo(trip){
+  var done=trip.todos.filter(function(t){return t.done;}).length;
+  var h='<div class="card">'+
+    '<div class="ctitle">待辦事項 ('+done+'/'+trip.todos.length+')</div>'+
+    '<ul class="tl">';
+  trip.todos.forEach(function(todo){
+    var calLink=calUrl(trip,todo.text);
+    h+='<li class="ti">'+
+      '<div class="ck '+(todo.done?'on':'')+'" onclick="togTodo(\''+trip.id+'\',\''+todo.id+'\')">'+(todo.done?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div>'+
+      '<span class="tt '+(todo.done?'done':'')+'" onclick="togTodo(\''+trip.id+'\',\''+todo.id+'\')" style="flex:1">'+todo.text+'</span>'+
+      (calLink?'<button class="td-cal" title="加入 Google 行事曆" onclick="window.open(\''+calLink+'\',\'_blank\')" style="display:flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>':'')+
+      '<button class="td-del" onclick="delTodo(\''+trip.id+'\',\''+todo.id+'\')" title="刪除">✕</button>'+
+    '</li>';
+  });
+  h+='</ul>'+
+    '<div class="tadd">'+
+    '<input id="nti_'+trip.id+'" class="inp" type="text" placeholder="新增待辦事項…" style="flex:1" onkeydown="if(event.key===\'Enter\')addTodo(\''+trip.id+'\')">'+
+    '<button class="bs bp" style="flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:5px" onclick="addTodo(\''+trip.id+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>新增</button>'+
+    '</div></div>';
+  if(trip.sheetsUrl){
+    h+='<a class="card" href="'+trip.sheetsUrl+'" target="_blank" style="display:flex;align-items:center;gap:8px;color:var(--pri);font-size:13px;font-weight:600">'+icn('tag',16,'var(--pri)')+' 開啟 Google Sheets 出差紀錄（列 '+(trip.sheetsRow||'—')+'）</a>';
+  }
+  document.getElementById('tt').innerHTML=h;
+}
+function togTodo(tripId,todoId){
+  var trips=getTrips(),trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  var todo=trip.todos.find(function(t){return t.id===todoId;});
+  if(!todo) return;
+  todo.done=!todo.done; saveTrips(); rTodo(trip);
+  toast(todo.done?'✅ '+todo.text:'↩ 取消 '+todo.text);
+}
+function addTodo(tripId){
+  var inp=document.getElementById('nti_'+tripId);
+  if(!inp) return;
+  var text=inp.value.trim();
+  if(!text){toast('請輸入待辦事項');return;}
+  var trips=getTrips(),trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  trip.todos.push({id:'u'+Date.now(),text:text,done:false});
+  saveTrips(); inp.value=''; rTodo(trip); toast('✅ 已新增：'+text);
+}
+function delTodo(tripId,todoId){
+  var trips=getTrips(),trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  var todo=trip.todos.find(function(t){return t.id===todoId;});
+  trip.todos=trip.todos.filter(function(t){return t.id!==todoId;});
+  saveTrips(); rTodo(trip);
+  toast('🗑 已刪除：'+(todo?todo.text:''));
+}
+
+// ═══════════════════════════════════════
+// EMPLOYEE TAB — central DB across all trips
+// ═══════════════════════════════════════
+
+// Google Sheets 員工資料來源
+var SHEETS_EMP_CSV='https://docs.google.com/spreadsheets/d/15fjQ_oQKwLlR8dYKsIjADKDO3hNJD5Ier77JNt1glEk/gviz/tq?tqx=out:csv&sheet=%E5%93%A1%E5%B7%A5%E8%B3%87%E6%96%99';
+var SHEETS_EMP_URL='https://docs.google.com/spreadsheets/d/15fjQ_oQKwLlR8dYKsIjADKDO3hNJD5Ier77JNt1glEk/edit?gid=0#gid=0';
+
+// 簡易 CSV 解析（支援引號欄位）
+// 解析 CSV（逗號分隔，支援引號欄位）
+function parseCSV(text){
+  var rows=[];
+  var lines=text.split(/\r?\n/);
+  lines.forEach(function(line){
+    if(!line.trim()) return;
+    var cols=[],cur='',inQ=false;
+    for(var i=0;i<line.length;i++){
+      var c=line[i];
+      if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+      else if(c===','&&!inQ){cols.push(cur);cur='';}
+      else cur+=c;
+    }
+    cols.push(cur);
+    rows.push(cols);
+  });
+  return rows;
+}
+// 解析 TSV（Tab 分隔，從 Google Sheets 直接複製貼上時使用）
+function parseTSV(text){
+  var rows=[];
+  text.split(/\r?\n/).forEach(function(line){
+    if(!line.trim()) return;
+    rows.push(line.split('\t').map(function(c){return c.trim();}));
+  });
+  return rows;
+}
+// 自動偵測格式後解析（CSV 或 TSV）
+function parseTable(text){
+  return text.indexOf('\t')!==-1 ? parseTSV(text) : parseCSV(text);
+}
+
+// 將解析後的 rows 寫入員工 DB 並同步 MEM
+function applyEmpRows(rows,tripForRefresh){
+  if(rows.length<2) return 0;
+  var db=lsGet('gama_employees')||{};
+  var updated=0;
+  rows.slice(1).forEach(function(col){
+    var name=(col[0]||'').trim();
+    if(!name||name.charAt(0)==='<'||name.charAt(0)==='!') return;
+    // A(0)=中文姓名 E(4)=英文姓名 F(5)=護照號碼 H(7)=護照截止 I(8)=行動電話 J(9)=住家地址
+    var nameEn=(col[4]||'').trim();
+    var pp=(col[5]||'').trim();
+    var ppExp=(col[7]||'').trim().replace(/\//g,'-');
+    var phone=(col[8]||'').trim();
+    var addr=(col[9]||'').trim();
+    if(!db[name]) db[name]={name:name};
+    if(nameEn) db[name].nameEn=nameEn;
+    if(pp)     db[name].pp=pp;
+    if(ppExp)  db[name].ppExp=ppExp;
+    if(phone)  db[name].phone=phone;
+    if(addr)   db[name].addr=addr;
+    updated++;
+  });
+  if(updated===0) return 0;
+  saveEmpDB(db);
+  var allTrips=getTrips();
+  allTrips.forEach(function(t){
+    t.passengers.forEach(function(p){
+      var e=db[p.name]; if(!e) return;
+      if(e.nameEn) p.nameEn=e.nameEn;
+      if(e.pp)     p.pp=e.pp;
+      if(e.ppExp)  p.ppExp=e.ppExp;
+      if(e.phone)  p.phone=e.phone;
+      if(e.addr)   p.addr=e.addr;
+    });
+  });
+  saveTrips();
+  if(tripForRefresh){rEmployee(tripForRefresh);rDispatch(tripForRefresh);}
+  return updated;
+}
+
+// 手動貼上 CSV/TSV 匯入
+function importFromPaste(tripId){
+  var ta=document.getElementById('csv-paste-area');
+  if(!ta||!ta.value.trim()){toast('❌ 請先貼上資料');return;}
+  var raw=ta.value;
+  if(raw.charCodeAt(0)===0xFEFF) raw=raw.slice(1);
+  if(raw.trim().charAt(0)==='<'){toast('❌ 請貼上表格資料，不是 HTML');return;}
+  var rows=parseTable(raw);
+  var trips=getTrips(), trip=trips.find(function(t){return t.id===tripId;});
+  var cnt=applyEmpRows(rows,trip);
+  if(cnt===0){toast('❌ 找不到有效員工姓名（請確認 A 欄第 2 列起為中文姓名）');return;}
+  toast('✅ 匯入完成：'+cnt+' 位員工資料已更新');
+}
+
+// 從 Google Sheets 載入員工資料並同步至本機 DB
+// silent=true：CORS / 網路錯誤靜默略過，只在成功時顯示 toast
+function syncFromSheets(tripForRefresh, silent){
+  var btn=document.getElementById('sync-btn');
+  if(!silent&&btn){btn.textContent='⏳ 同步中…';btn.disabled=true;}
+  fetch(SHEETS_EMP_CSV)
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status+' — 無法取得試算表');
+      return r.text();
+    })
+    .then(function(raw){
+      var csv=raw.charCodeAt(0)===0xFEFF ? raw.slice(1) : raw;
+      if(csv.trim().charAt(0)==='<'){
+        throw new Error('收到 HTML 而非 CSV。\n請至試算表 →「檔案」→「共用」→「發布到網路」→ 選「員工資料」→ CSV → 發布');
+      }
+      var rows=parseCSV(csv);
+      if(rows.length<2) throw new Error('試算表無資料（共 '+rows.length+' 列）');
+      var cnt=applyEmpRows(rows,tripForRefresh);
+      if(cnt===0) throw new Error('CSV 無有效姓名。請確認試算表 A 欄第 2 列起為員工中文姓名。');
+      lsSet('gama_emp_last_sync', Date.now());
+      _updateSyncLabels();
+      toast('✅ 雲端同步完成：'+cnt+' 位員工已更新');
+      if(btn){btn.textContent='🔄 雲端同步';btn.disabled=false;}
+    })
+    .catch(function(err){
+      if(btn){btn.textContent='🔄 雲端同步';btn.disabled=false;}
+      if(silent) return;
+      var msg=err.message||String(err);
+      if(msg.indexOf('fetch')!==-1||msg.indexOf('network')!==-1||msg.toLowerCase().indexOf('failed')!==-1){
+        msg='網路連線失敗。\n\n若您是在本機直接開啟 HTML 檔（file://），部分瀏覽器會封鎖外部請求。\n請嘗試：用 Chrome 開啟，或改用手動輸入。';
+      }
+      toast('❌ 同步失敗：'+msg);
+    });
+}
+
+// 更新頁面上所有「上次同步」標籤
+function _updateSyncLabels(){
+  var ts=lsGet('gama_emp_last_sync');
+  document.querySelectorAll('.sync-last-time').forEach(function(el){
+    if(!ts){el.textContent='';return;}
+    var d=new Date(ts);
+    var hh=('0'+d.getHours()).slice(-2),mm=('0'+d.getMinutes()).slice(-2);
+    el.textContent='上次同步 '+hh+':'+mm;
+  });
+}
+
+// ── 內建員工資料庫（來源：差旅相關資料.xlsx + 護照掃描 + 分機表，更新：2026-03-13）──
+var SEED_EMPLOYEES=[
+  {name:'嚴志軒',nameEn:'YEN, CHIH-HSUAN',pp:'367939065',ppExp:'2035-02-25',phone:'0916-991570',addr:'台中市大肚區遊園路一段76之3號'},
+  {name:'賴蕙娟',nameEn:'',pp:'',ppExp:'',phone:'0919-834529',addr:''},
+  {name:'郭景涵',nameEn:'',pp:'',ppExp:'',phone:'0905-139521',addr:''},
+  {name:'邱宇柔',nameEn:'CHIU,YU-JOU',pp:'',ppExp:'',phone:'0958-678536',addr:''},
+  {name:'陳俊宏',nameEn:'CHEN, CHUN-HUNG',pp:'360658982',ppExp:'2032-09-27',phone:'0936-601005',addr:'彰化縣埔心鄉明聖路四段236巷2弄7號'},
+  {name:'陳俊良',nameEn:'CHEN, CHUN-LIANG',pp:'360655705',ppExp:'2032-09-20',phone:'0933-530052',addr:'彰化縣花壇鄉橋頭村彰員路二段257號'},
+  {name:'吳俊平',nameEn:'WU, CHUN-PING',pp:'360531192',ppExp:'2032-07-01',phone:'0975-342307',addr:'臺中市北屯區崇德二路二段308號'},
+  {name:'邱俊崎',nameEn:'CHIU,CHUN-CHI',pp:'311982453',ppExp:'2025-10-08',phone:'0921-593420',addr:''},
+  {name:'林翰昱',nameEn:'LIN,HAN-YU',pp:'368642612',ppExp:'2035-06-04',phone:'0972-880253',addr:'臺中市潭子區頭家路116巷32號'},
+  {name:'黃眉瑜',nameEn:'HUANG,MEI-YU',pp:'315850563',ppExp:'2027-10-03',phone:'0963-144476',addr:'台中市南屯區向上路五段三號11樓之3'},
+  {name:'黃元邑',nameEn:'HUANG,YUAN-YI',pp:'367430398',ppExp:'2034-11-20',phone:'0985-944886',addr:'台中市南屯區楓樹西街189號10樓之12'},
+  {name:'郭慧彬',nameEn:'GUO, HUEI-BIN',pp:'368373303',ppExp:'2035-05-08',phone:'0932-682866',addr:''},
+  {name:'黃易',nameEn:'HUANG,YI',pp:'368269474',ppExp:'2035-04-16',phone:'0963-924305',addr:'台中市龍井區新興路14巷12號'},
+  {name:'李宣槿',nameEn:'LI,XUAN-JIN',pp:'352960317',ppExp:'2029-10-29',phone:'0910-738826',addr:''},
+  {name:'王正頡',nameEn:'WANG,ZHENG-JIE',pp:'362170049',ppExp:'2033-04-24',phone:'0989-510603',addr:''},
+  {name:'林東慶',nameEn:'LIN,DUNG-CHING',pp:'369834423',ppExp:'2035-12-10',phone:'0988-754-032',addr:''},
+  {name:'王姿驊',nameEn:'WANG,TZU-HUA',pp:'361788114',ppExp:'2033-03-22',phone:'0928-256698',addr:'台中市北屯區敦富路203號4樓之3'},
+  {name:'吳莤郁',nameEn:'WU,YOU-YU',pp:'365512640',ppExp:'2034-03-29',phone:'0978-617767',addr:'台中市北區崇德路一段458號'},
+  {name:'杜亭燁',nameEn:'TU,TING-YEH',pp:'366706598',ppExp:'2034-08-09',phone:'0919-537752',addr:'台中市西屯區中工二路138號'},
+  {name:'林峻賢',nameEn:'LIN,CHUN-HSIEN',pp:'316099105',ppExp:'2027-11-29',phone:'0975-514468',addr:'台中市西屯區寶慶街18巷27號'},
+  {name:'王裕盛',nameEn:'WANG,YU-SHENG',pp:'365983928',ppExp:'2034-05-21',phone:'0919-615630',addr:'台中市西屯區順和8街9號'},
+  {name:'林永森',nameEn:'LIN,YONG-SEN',pp:'369609978',ppExp:'2035-11-20',phone:'0909-186-530',addr:''},
+  {name:'張家銘',nameEn:'CHANG,CHIA-MING',pp:'313232460',ppExp:'2026-05-06',phone:'0928-668349',addr:'台中市西屯區至善路119號'},
+  {name:'黃奕翔',nameEn:'HUANG,I-HSIANG',pp:'365404057',ppExp:'2034-03-18',phone:'0975-549-064',addr:'台中市南屯區大進街536號'},
+  {name:'黃玟瑜',nameEn:'',pp:'',ppExp:'',phone:'0930-189-545',addr:''},
+  {name:'杜佳瀚',nameEn:'TU,CHIA-HAN',pp:'353188091',ppExp:'2029-12-09',phone:'0930-313603',addr:''},
+  {name:'陳俊豪',nameEn:'',pp:'',ppExp:'',phone:'0976-057120',addr:''},
+  {name:'江益愷',nameEn:'CHIANG,YI-KAI',pp:'353480934',ppExp:'2029-12-18',phone:'0975-169-308',addr:''},
+  {name:'陳凱其',nameEn:'CHEN,KAI-CHI',pp:'352861043',ppExp:'2029-10-03',phone:'0910-300535',addr:'台中市西屯區工業區一路98-11號'},
+  {name:'陳協駿',nameEn:'CHEN,XIE-JUN',pp:'368254520',ppExp:'2035-04-07',phone:'0923-919906',addr:'台中市北區太原路一段504之3號'},
+  {name:'張育豪',nameEn:'',pp:'',ppExp:'',phone:'0975-362-358',addr:''},
+  {name:'江浩文',nameEn:'',pp:'',ppExp:'',phone:'0956-329-434',addr:''},
+  {name:'阮明源',nameEn:'',pp:'',ppExp:'',phone:'0909-930-504',addr:''},
+  {name:'楊瑩淑',nameEn:'',pp:'',ppExp:'',phone:'0968-391210',addr:''},
+  {name:'林蓉懋',nameEn:'LIN, JUNG-MAO',pp:'351921121',ppExp:'2029-03-26',phone:'0911-795619',addr:'彰化縣彰化市埔陽街52巷8號'},
+  {name:'江仁豪',nameEn:'CHIANG, JEN-HAO',pp:'360542578',ppExp:'2032-08-08',phone:'0912-233516',addr:'台中市南屯區南屯路二段960號'},
+  {name:'陳威村',nameEn:'CHEN,WEI-TSUN',pp:'367678917',ppExp:'2035-02-04',phone:'0916-053927',addr:'台中市南屯區忠勇路52-76號8F'},
+  {name:'宋煥為',nameEn:'',pp:'',ppExp:'',phone:'0985-799126',addr:''},
+  {name:'朱余晟',nameEn:'CHU,YU-CHEN',pp:'350586192',ppExp:'2028-05-18',phone:'0932-096605',addr:'台中市清水區中社路102-62號'},
+  {name:'王鵬富',nameEn:'',pp:'',ppExp:'',phone:'0972-709562',addr:''},
+  {name:'楊子萱',nameEn:'',pp:'',ppExp:'',phone:'0921-472795',addr:''},
+  {name:'楊智婷',nameEn:'',pp:'',ppExp:'',phone:'0921-472795',addr:''},
+  {name:'潘亮妤',nameEn:'PAN,LIANG-YU',pp:'362532955',ppExp:'2033-05-11',phone:'0975-369517',addr:'台中市西屯區台灣大道四段673號'},
+  {name:'林泰安',nameEn:'LIN,TAI-AN',pp:'',ppExp:'',phone:'0966-082183',addr:''},
+  {name:'楊介文',nameEn:'',pp:'',ppExp:'',phone:'953539523',addr:''},
+  {name:'顏翊婷',nameEn:'',pp:'',ppExp:'',phone:'0989-765805',addr:''},
+  {name:'黃群哲',nameEn:'',pp:'',ppExp:'',phone:'0928-320355',addr:''},
+  {name:'莊珉瑜',nameEn:'',pp:'',ppExp:'',phone:'0910-419766',addr:''}
+];
+
+function getEmpDB(){
+  var db=lsGet('gama_employees')||{};
+  // SEED_EMPLOYEES 為主權威：每次都以 SEED 值覆寫 localStorage
+  // 確保 HTML 更新後新資料立即生效，雲端同步仍可再疊加更新
+  var changed=false;
+  SEED_EMPLOYEES.forEach(function(s){
+    if(!s.name) return;
+    if(!db[s.name]){
+      db[s.name]={name:s.name,nameEn:s.nameEn||'',pp:s.pp||'',ppExp:s.ppExp||'',phone:s.phone||'',addr:s.addr||''};
+      changed=true;
+    } else {
+      // 有值的欄位一律以 SEED 覆寫（不管 localStorage 現有值）
+      if(s.nameEn!==undefined&&s.nameEn!==db[s.name].nameEn){db[s.name].nameEn=s.nameEn;changed=true;}
+      if(s.pp!==undefined&&s.pp!==db[s.name].pp){db[s.name].pp=s.pp;changed=true;}
+      if(s.ppExp!==undefined&&s.ppExp!==db[s.name].ppExp){db[s.name].ppExp=s.ppExp;changed=true;}
+      if(s.phone!==undefined&&s.phone!==db[s.name].phone){db[s.name].phone=s.phone;changed=true;}
+      if(s.addr!==undefined&&s.addr!==db[s.name].addr){db[s.name].addr=s.addr;changed=true;}
+    }
+  });
+  if(changed) lsSet('gama_employees',db);
+  return db;
+}
+function saveEmpDB(db){lsSet('gama_employees',db);}
+
+// Merge central DB data into a passenger object (non-destructively)
+// 標準化英文姓名以便比對（去除空格、逗號、斜線、連字號）
+function normEnName(s){return (s||'').toUpperCase().replace(/[,\-\/\.\s]/g,'').replace(/(?:MR|MS|MRS|DR)$/,'');}
+// 以英文名在員工資料庫中搜尋（回傳員工物件或 null）
+function lookupEmpByEnName(nameStr){
+  var db=getEmpDB();
+  var pn=normEnName(nameStr);
+  if(!pn||pn.length<3) return null;
+  var found=null;
+  Object.keys(db).forEach(function(k){
+    if(found) return;
+    var emp=db[k];
+    if(emp.nameEn && normEnName(emp.nameEn)===pn) found=emp;
+  });
+  return found;
+}
+function mergeEmpData(p){
+  var db=getEmpDB();
+  // 先嘗試中文名直接比對
+  var e=db[p.name]||null;
+  // 若找不到（p.name 為英文），再以英文名模糊比對
+  if(!e) e=lookupEmpByEnName(p.name)||lookupEmpByEnName(p.nameEn)||{};
+  return {
+    name:p.name,nameEn:p.nameEn||e.nameEn||'',ticket:p.ticket||'',
+    pp:p.pp||e.pp||'',ppExp:p.ppExp||e.ppExp||'',
+    phone:p.phone||e.phone||'',addr:p.addr||e.addr||'',
+    addrEn:p.addrEn||e.addrEn||''
+  };
+}
+
+function ppStatus(ppExp){
+  if(!ppExp) return {cls:'pp-warn',label:'未填寫'};
+  var days=((new Date(ppExp)-new Date())/864e5);
+  if(isNaN(days)) return {cls:'pp-warn',label:'格式錯誤'};
+  if(days<0) return {cls:'pp-danger',label:'已過期'};
+  if(days<90) return {cls:'pp-danger',label:'即將到期（'+Math.round(days)+'天）'};
+  if(days<180) return {cls:'pp-warn',label:'注意效期（'+Math.round(days)+'天）'};
+  return {cls:'pp-ok',label:'有效（'+Math.round(days)+'天）'};
+}
+
+function rEmployee(trip){
+  var h='';
+  var sheetsUrl=trip.sheetsUrl||'';
+
+  // Cloud link bar + manual paste panel
+  var tid=trip.id;
+  h+='<div class="sheets-bar" style="flex-wrap:wrap;gap:6px">'+
+    '<span style="flex:1;min-width:120px;font-size:13px;display:flex;align-items:center;gap:5px">'+icn('person',14,'#166534')+'員工資料庫</span>'+
+    '<a href="'+SHEETS_EMP_URL+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;padding:5px 10px;background:#16a34a;color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">試算表</a>'+
+    '<button id="sync-btn" onclick="syncFromSheets((function(){var trips=getTrips();return trips.find(function(t){return t.id===\''+tid+'\';});})()" style="display:inline-flex;align-items:center;gap:3px;padding:5px 10px;background:var(--pri);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">同步</button>'+
+    '<span class="sync-last-time" style="font-size:11px;color:var(--muted);align-self:center"></span>'+
+    '<button onclick="(function(){var p=document.getElementById(\'csv-panel\');p.style.display=p.style.display===\'none\'?\'block\':\'none\';})()" style="display:inline-flex;align-items:center;gap:3px;padding:5px 10px;background:#d97706;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">貼上匯入</button>'+
+    (sheetsUrl ? '<a href="'+sheetsUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:3px;padding:5px 10px;background:#0284c7;color:#fff;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">出差表</a>' : '')+
+  '</div>'+
+  '<div id="csv-panel" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--rs);padding:12px;margin-bottom:10px">'+
+    '<div style="font-size:13px;font-weight:700;margin-bottom:6px">從試算表複製貼上匯入</div>'+
+    '<div style="font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:8px">'+
+      '① 開啟 <a href="'+SHEETS_EMP_URL+'" target="_blank" style="color:var(--pri)">員工試算表</a> → 選取所有資料（含標題列）<br>'+
+      '② 複製（Ctrl+C / Cmd+C）<br>'+
+      '③ 點下方方塊後貼上（Ctrl+V / Cmd+V）→ 按「匯入」<br>'+
+      '<span style="color:var(--warn)">支援 CSV 與直接從 Sheets 複製的 Tab 格式</span>'+
+    '</div>'+
+    '<textarea id="csv-paste-area" style="width:100%;height:90px;font-size:11px;font-family:monospace;border:1px solid var(--border);border-radius:6px;padding:6px;resize:vertical;background:#fff" placeholder="在此貼上試算表資料…"></textarea>'+
+    '<button class="bs bp" style="margin-top:8px;width:100%;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="importFromPaste(\''+tid+'\')">'+icn('person',14,'#fff')+' 匯入員工資料</button>'+
+  '</div>';
+
+  if(!trip.passengers||trip.passengers.length===0){
+    h+='<div class="card" style="text-align:center;color:var(--muted);padding:32px">尚無旅客資料</div>';
+    document.getElementById('te').innerHTML=h;
+    return;
+  }
+
+  trip.passengers.forEach(function(p,pi){
+    var m=mergeEmpData(p);   // merged with central DB
+    var st=ppStatus(m.ppExp);
+    var formId='epf_'+pi;
+    h+='<div class="ep-card">'+
+      '<div class="ep-hd">'+
+        '<div class="ep-av">'+(m.name?m.name.charAt(0):'?')+'</div>'+
+        '<div>'+
+          '<div class="ep-name">'+(m.name||'—')+'</div>'+
+          '<div class="ep-en">'+(m.nameEn||'（英文姓名未設定）')+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="ep-bd">'+
+        '<div class="ep-item"><span class="ep-label">護照號碼</span><span class="ep-val">'+(m.pp||'<span style="color:var(--warn)">未填</span>')+'</span></div>'+
+        '<div class="ep-item"><span class="ep-label">護照效期</span><span class="ep-val '+st.cls+'">'+(m.ppExp||'—')+' <small>('+st.label+')</small></span></div>'+
+        '<div class="ep-item"><span class="ep-label">手機</span><span class="ep-val">'+(m.phone||'<span style="color:var(--warn)">未填</span>')+'</span></div>'+
+        '<div class="ep-item"><span class="ep-label">住家地址</span><span class="ep-val" style="font-size:12px">'+(m.addr||'<span style="color:var(--warn)">未填</span>')+'</span></div>'+
+        '<div class="ep-item"><span class="ep-label">票號</span><span class="ep-val" style="font-size:11px">'+(m.ticket||'—')+'</span></div>'+
+      '</div>'+
+      '<div style="display:flex;border-top:1px solid var(--border)">'+
+        '<button class="ep-edit-btn" style="flex:1;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:5px" onclick="toggleEpForm(\''+formId+'\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>編輯資料</button>'+
+        '<button onclick="removePaxFromTrip(\''+trip.id+'\','+pi+')" style="padding:10px 16px;font-size:12px;font-weight:700;color:var(--danger);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px">'+icn('trash',13,'var(--danger)')+'移除</button>'+
+      '</div>'+
+      '<div class="ep-form" id="'+formId+'">'+
+        '<p style="font-size:11px;color:var(--muted);margin:0 0 8px">資料儲存後自動同步至所有行程</p>'+
+        '<div style="display:grid;gap:8px">'+
+          '<label style="font-size:12px;color:var(--muted)">姓名（中文）</label>'+
+          '<input class="inp" id="'+formId+'_name" value="'+esc2(m.name)+'" placeholder="王小明">'+
+          '<label style="font-size:12px;color:var(--muted)">英文姓名（姓/名）</label>'+
+          '<input class="inp" id="'+formId+'_nameEn" value="'+esc2(m.nameEn)+'" placeholder="CHEN/TAIWAN">'+
+          '<label style="font-size:12px;color:var(--muted)">護照號碼</label>'+
+          '<input class="inp" id="'+formId+'_pp" value="'+esc2(m.pp)+'" placeholder="護照號碼">'+
+          '<label style="font-size:12px;color:var(--muted)">護照效期</label>'+
+          '<input class="inp" id="'+formId+'_ppExp" value="'+esc2(m.ppExp)+'" placeholder="2029-12-31" type="date">'+
+          '<label style="font-size:12px;color:var(--muted)">手機</label>'+
+          '<input class="inp" id="'+formId+'_phone" value="'+esc2(m.phone)+'" placeholder="0912-345-678">'+
+          '<label style="font-size:12px;color:var(--muted)">住家地址（中文）</label>'+
+          '<input class="inp" id="'+formId+'_addr" value="'+esc2(m.addr)+'" placeholder="台中市東區某某路123號">'+
+          '<label style="font-size:12px;color:var(--muted)">英文地址（簽證用）</label>'+
+          '<input class="inp" id="'+formId+'_addrEn" value="'+esc2(m.addrEn||'')+'" placeholder="No.123, Sec.1, XXX Rd., Taichung City, Taiwan">'+
+        '</div>'+
+        '<button class="bs bp" style="margin-top:10px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px" onclick="saveEpForm(\''+trip.id+'\','+pi+',\''+formId+'\')">'+icn('check',14,'#fff')+'儲存（更新所有行程）</button>'+
+      '</div>'+
+    '</div>';
+  });
+
+  // ── 新增旅客面板 ──────────────────────────
+  h+='<div class="card" style="margin-top:4px">'+
+    '<div class="ctitle">新增旅客至本行程</div>'+
+    '<div style="margin-bottom:10px">'+
+      '<label class="lbl">從員工資料庫搜尋</label>'+
+      '<input class="inp" id="pax-search-'+tid+'" placeholder="輸入姓名關鍵字…" oninput="renderPaxSearch(\''+tid+'\')" autocomplete="off">'+
+      '<div id="pax-search-results-'+tid+'" style="margin-top:6px"></div>'+
+    '</div>'+
+    '<div style="border-top:1px solid var(--border);padding-top:10px">'+
+      '<label class="lbl">手動新增（不在員工庫中）</label>'+
+      '<div style="display:grid;gap:6px">'+
+        '<input class="inp" id="pax-m-name-'+tid+'" placeholder="姓名（中文）">'+
+        '<input class="inp" id="pax-m-nameEn-'+tid+'" placeholder="英文姓名（選填，例：CHEN/TAIWAN）">'+
+        '<button class="bs bp" style="display:flex;align-items:center;justify-content:center;gap:6px" onclick="addManualPax(\''+tid+'\')">'+icn('person',14,'#fff')+'手動新增旅客</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+
+  document.getElementById('te').innerHTML=h;
+  _updateSyncLabels(); // 渲染後立即填入上次同步時間
+}
+// safe escape for HTML attribute values
+function esc2(s){return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+function toggleEpForm(formId){
+  var el=document.getElementById(formId);
+  if(el) el.classList.toggle('open');
+}
+
+function saveEpForm(tripId,pi,formId){
+  var trips=getTrips(),trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip||!trip.passengers[pi]) return;
+  var p=trip.passengers[pi];
+  var g=function(suf){var el=document.getElementById(formId+'_'+suf);return el?el.value.trim():'';};
+  var oldName=p.name;
+  var newName=g('name')||oldName;
+  var newData={name:newName,nameEn:g('nameEn'),pp:g('pp'),ppExp:g('ppExp'),phone:g('phone'),addr:g('addr'),addrEn:g('addrEn')};
+  // Save to THIS trip's passenger
+  Object.assign(p,newData);
+  // Save to central employee DB so all trips benefit
+  var db=getEmpDB();
+  var dbKey=newName||oldName;
+  if(!db[dbKey]) db[dbKey]={name:dbKey};
+  Object.assign(db[dbKey],newData,{name:dbKey});
+  saveEmpDB(db);
+  // Also update same employee in all other trips in memory
+  var allTrips=getTrips();
+  allTrips.forEach(function(t){
+    t.passengers.forEach(function(pp){
+      if(pp.name===oldName) Object.assign(pp,newData);
+    });
+  });
+  saveTrips();
+  toast('✅ 已儲存 '+newName+' 資料（已同步所有行程）');
+  document.getElementById(formId).classList.remove('open');
+  rEmployee(trip);
+  rDispatch(trip);  // 同步更新派車單手機/地址
+}
+
+// ── 旅客人員新增 / 移除 ──────────────────────
+// ── 全頁更新：新增/移除旅客後統一呼叫 ───────────
+function refreshDetail(trip){
+  // 1. Header 人數 & 名單
+  var out=trip.segs.find(function(s){return s.dir==='out';});
+  var inb=[].concat(trip.segs).reverse().find(function(s){return s.dir==='in';});
+  var dhero=document.getElementById('dhero');
+  if(dhero){
+    dhero.innerHTML=
+      '<div style="font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px">'+icn('plane',22,'rgba(255,255,255,.9)')+' '+trip.destination+'</div>'+
+      '<div class="sub">'+(trip.event||'')+'</div>'+
+      '<div class="meta">'+
+      (out?'<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('plane',12,'rgba(255,255,255,.8)')+' 出發 '+out.dd+'</div>':'')+
+      (inb?'<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('arrive',12,'rgba(255,255,255,.8)')+' 返回 '+inb.ad+'</div>':'')+
+      '<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('person',12,'rgba(255,255,255,.8)')+' '+trip.passengers.length+' 人</div>'+
+      '<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('tag',12,'rgba(255,255,255,.8)')+' '+(trip.ref||'—')+'</div>'+
+      '</div>';
+  }
+  // 2. 全部頁籤重新渲染
+  rFlight(trip); rVisa(trip); rHotel(trip); rDispatch(trip); rTodo(trip); rEmployee(trip); rReport(trip);
+  // 3. 儀表板卡片更新
+  renderDash();
+}
+
+function removePaxFromTrip(tripId,pi){
+  var trips=getTrips(),trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip||!trip.passengers[pi]) return;
+  var name=trip.passengers[pi].name||trip.passengers[pi].nameEn||'此旅客';
+  if(!confirm('確定要將「'+name+'」從本行程移除？（不影響其他行程及員工資料庫）')) return;
+  trip.passengers.splice(pi,1);
+  saveTrips();
+  toast('🗑 已移除旅客：'+name);
+  refreshDetail(trip);
+}
+
+function renderPaxSearch(tripId){
+  var q=(document.getElementById('pax-search-'+tripId).value||'').trim();
+  var out=document.getElementById('pax-search-results-'+tripId);
+  if(!out) return;
+  if(!q){out.innerHTML='';return;}
+  var db=getEmpDB();
+  var trips=getTrips();
+  var trip=trips.find(function(t){return t.id===tripId;});
+  var existing=(trip?trip.passengers:[]).map(function(p){return p.name;});
+  var matches=Object.keys(db).filter(function(k){
+    return k.indexOf(q)>=0 && existing.indexOf(k)<0;
+  }).slice(0,6);
+  if(!matches.length){
+    out.innerHTML='<p style="font-size:12px;color:var(--muted);padding:4px 0">查無符合員工</p>';
+    return;
+  }
+  out.innerHTML=matches.map(function(name){
+    var emp=db[name]||{};
+    return '<button onclick="addEmpPaxToTrip(\''+tripId+'\',\''+escHtml(name)+'\')" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit">'+
+      '👤 <b>'+escHtml(name)+'</b>'+(emp.nameEn?' <span style="color:var(--muted);font-size:11px">'+escHtml(emp.nameEn)+'</span>':'')+
+    '</button>';
+  }).join('');
+}
+
+function addEmpPaxToTrip(tripId,empName){
+  var trips=getTrips(),trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  if(trip.passengers.some(function(p){return p.name===empName;})){
+    toast('⚠️ 「'+empName+'」已在旅客名單中');return;
+  }
+  var db=getEmpDB();
+  var emp=db[empName]||{};
+  trip.passengers.push({name:empName,nameEn:emp.nameEn||'',ticket:'',pp:emp.pp||'',ppExp:emp.ppExp||'',phone:emp.phone||'',addr:emp.addr||''});
+  saveTrips();
+  toast('✅ 已加入旅客：'+empName);
+  refreshDetail(trip);
+}
+
+function addManualPax(tripId){
+  var name=(document.getElementById('pax-m-name-'+tripId).value||'').trim();
+  var nameEn=(document.getElementById('pax-m-nameEn-'+tripId).value||'').trim();
+  if(!name){toast('⚠️ 請輸入姓名');return;}
+  var trips=getTrips(),trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  if(trip.passengers.some(function(p){return p.name===name;})){
+    toast('⚠️ 「'+name+'」已在旅客名單中');return;
+  }
+  var db=getEmpDB();
+  var emp=db[name]||{};
+  trip.passengers.push({name:name,nameEn:nameEn||emp.nameEn||'',ticket:'',pp:emp.pp||'',ppExp:emp.ppExp||'',phone:emp.phone||'',addr:emp.addr||''});
+  saveTrips();
+  toast('✅ 已手動新增旅客：'+name);
+  refreshDetail(trip);
+}
+
+// ═══════════════════════════════════════
+// PDF UPLOAD — auto-populate all tabs after parse
+// ═══════════════════════════════════════
+var parsed=null, uFiles=[];
+
+function resetUpload(){
+  parsed=null; uFiles=[];
+  document.getElementById('fl').innerHTML='';
+  document.getElementById('fcnt').textContent='';
+  document.getElementById('ps').style.display='none';
+  ['ev','hn','hpr'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('fi').value='';
+}
+
+var dz=document.getElementById('dz');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',function(){dz.classList.remove('drag');});
+dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('drag');handleFiles(e.dataTransfer.files);});
+document.getElementById('fi').addEventListener('change',function(e){handleFiles(e.target.files);});
+document.getElementById('hci').addEventListener('change',_onHotelFileSelected);
+
+function handleFiles(files){
+  uFiles=Array.from(files).filter(function(f){return f.name.toLowerCase().endsWith('.pdf');});
+  if(!uFiles.length){toast('請選擇 PDF 檔案');return;}
+  document.getElementById('fcnt').textContent='已選取 '+uFiles.length+' 個 PDF';
+  renderFileList();
+  processFiles();
+}
+function renderFileList(){
+  document.getElementById('fl').innerHTML=uFiles.map(function(f,i){
+    return '<div class="fi-item" id="fi'+i+'">'+
+      '<span style="font-size:22px">📄</span>'+
+      '<div style="flex:1;min-width:0"><div class="fi-name">'+f.name+'</div>'+
+      '<div class="pr-bar"><div class="pr-fill" id="pf'+i+'" style="width:0%"></div></div></div>'+
+      '<span class="fi-st" id="fs'+i+'">處理中…</span></div>';
+  }).join('');
+}
+
+function processFiles(){
+  setLoad(true);
+  var results=[],done=0;
+  function finish(res){
+    setLoad(false);
+    try{
+      var valid=res.filter(Boolean);
+      if(!valid.length){toast('⚠ 無法讀取 PDF，請確認檔案正確');return;}
+      var merged=mergeResults(valid);
+      if(merged&&(merged.segs.length>0||merged.passengers.length>0)){
+        parsed=merged;
+        showParseResult(merged);
+        var previewTrip=buildTripFromParsed(merged,'','','');
+        previewTrip.id='__preview__';
+        curId='__preview__';
+        showDetail(previewTrip,true);
+      } else {
+        toast('⚠ 已讀取 PDF 但未辨識到機票資料，請確認為航空公司原始電子機票');
+      }
+    }catch(e){toast('❌ 解析錯誤：'+e.message);console.error(e);}
+  }
+  uFiles.forEach(function(f,i){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      extractTextFromPDF(e.target.result,i).then(function(txt){
+        var res=parseTicket(txt);
+        results.push(res);
+        var ok=res&&res.segs&&res.segs.length>0;
+        document.getElementById('fs'+i).textContent=ok?'✅ 解析成功':'⚠ 解析有限';
+        document.getElementById('pf'+i).style.width='100%';
+        done++; if(done===uFiles.length) finish(results);
+      }).catch(function(err){
+        results.push(null);
+        document.getElementById('fs'+i).textContent='❌ 讀取失敗';
+        done++; if(done===uFiles.length) finish(results);
+      });
+    };
+    reader.onerror=function(){
+      results.push(null);
+      document.getElementById('fs'+i).textContent='❌ 讀取失敗';
+      done++; if(done===uFiles.length) finish(results);
+    };
+    document.getElementById('pf'+i).style.width='30%';
+    reader.readAsArrayBuffer(f);
+  });
+}
+
+// ── PDF Text Extraction: PDF.js 優先，fallback 到舊方法 ──
+async function extractTextFromPDF(arrayBuffer,idx){
+  // 方法一：PDF.js（支援 CIDFont / Identity-H 等所有編碼）
+  try{
+    if(typeof pdfjsLib!=='undefined'){
+      // workerSrc 已在 <head> 設為 '' (fake worker mode)，不需要再設定
+      var loadTask=pdfjsLib.getDocument({data:arrayBuffer,useSystemFonts:true,verbosity:0});
+      var pdf=await loadTask.promise;
+      var out='';
+      for(var pi=1;pi<=pdf.numPages;pi++){
+        var page=await pdf.getPage(pi);
+        var content=await page.getTextContent();
+        out+=content.items.map(function(it){return it.str;}).join(' ')+' ';
+      }
+      try{document.getElementById('pf'+idx).style.width='90%';}catch{}
+      if(out.trim().length>30) return out;
+    }
+  }catch(e){console.warn('PDF.js failed, fallback:',e);}
+
+  // 方法二：舊版 raw 解析（fallback for offline / CDN 載入失敗）
+  var uint8=new Uint8Array(arrayBuffer);
+  var latin1=new TextDecoder('latin1').decode(uint8);
+  var out2='';
+  out2+=extractPDFStrings(latin1);
+  try{ out2+=' '+await extractFlatStreams(uint8,latin1); }catch(e){}
+  var asc='';
+  for(var i=0;i<Math.min(uint8.length,500000);i++){
+    var c=uint8[i];
+    if((c>=32&&c<=126)||(c===10||c===13)){asc+=String.fromCharCode(c);}
+    else{if(asc.length>4){out2+=' '+asc;}asc='';}
+  }
+  if(asc.length>4) out2+=asc;
+  try{document.getElementById('pf'+idx).style.width='70%';}catch{}
+  return out2;
+}
+
+function extractPDFStrings(text){
+  var out='';
+  // (string) literal
+  var m1=text.match(/\(([^\)\\]{2,120})\)/g)||[];
+  m1.forEach(function(s){
+    var v=s.slice(1,-1).replace(/\\n/g,' ').replace(/\\r/g,' ').replace(/\\t/g,' ')
+           .replace(/\\\d{3}/g,'').replace(/\\/g,'');
+    if(v.trim().length>1) out+=v+' ';
+  });
+  // [(text) n] TJ
+  var tj=text.match(/\[([^\]]+)\]\s*TJ/g)||[];
+  tj.forEach(function(b){
+    var p=b.match(/\(([^\)]*)\)/g)||[];
+    p.forEach(function(x){ out+=x.slice(1,-1)+' '; });
+  });
+  // (text) Tj
+  var tj2=text.match(/\(([^\)]{1,120})\)\s*Tj/g)||[];
+  tj2.forEach(function(s){ out+=s.replace(/\(|\)\s*Tj/g,'')+' '; });
+  return out;
+}
+
+async function extractFlatStreams(uint8,latin1){
+  var out='';
+  var pos=0;
+  while(pos<latin1.length){
+    var si=latin1.indexOf('stream',pos);
+    if(si===-1) break;
+    var nl=si+6;
+    if(latin1[nl]==='\r') nl++;
+    if(latin1[nl]!=='\n'){pos=si+6;continue;}
+    var dataStart=nl+1;
+    var ei=latin1.indexOf('endstream',dataStart);
+    if(ei===-1) break;
+    var hdr=latin1.substring(Math.max(0,si-600),si);
+    if(/FlateDecode|\/Fl[\s\/>\n\r]/.test(hdr)){
+      try{
+        var dec=await inflatePDF(uint8.slice(dataStart,ei));
+        if(dec.length>0){
+          var dl=new TextDecoder('latin1').decode(dec);
+          out+=extractPDFStrings(dl);
+          var asc='';
+          for(var i=0;i<Math.min(dec.length,200000);i++){
+            var c=dec[i];
+            if((c>=32&&c<=126)||(c===10||c===13)){asc+=String.fromCharCode(c);}
+            else{if(asc.length>5){out+=' '+asc;}asc='';}
+          }
+          if(asc.length>5) out+=asc;
+        }
+      }catch(e){}
+    }
+    pos=ei+9;
+  }
+  return out;
+}
+
+async function inflatePDF(data){
+  try{return await runDecompress(data,'deflate-raw');}catch(e){}
+  try{return await runDecompress(data,'deflate');}catch(e){}
+  return new Uint8Array(0);
+}
+
+function runDecompress(data,fmt){
+  return new Promise(function(resolve,reject){
+    try{
+      var ds=new DecompressionStream(fmt);
+      var writer=ds.writable.getWriter();
+      var reader=ds.readable.getReader();
+      var chunks=[];
+      function pump(){
+        reader.read().then(function(r){
+          if(r.done){
+            var tot=chunks.reduce(function(a,b){return a+b.length;},0);
+            var out=new Uint8Array(tot),off=0;
+            chunks.forEach(function(c){out.set(c,off);off+=c.length;});
+            resolve(out);
+          }else{chunks.push(r.value);pump();}
+        }).catch(function(){
+          if(chunks.length){
+            var tot=chunks.reduce(function(a,b){return a+b.length;},0);
+            var out=new Uint8Array(tot),off=0;
+            chunks.forEach(function(c){out.set(c,off);off+=c.length;});
+            resolve(out);
+          }else reject(new Error('empty'));
+        });
+      }
+      writer.write(data);
+      writer.close().catch(function(){});
+      pump();
+    }catch(e){reject(e);}
+  });
+}
+
+function normTime(t){
+  // 0910 → 09:10，已有冒號則直接返回
+  if(!t) return '';
+  t=String(t).replace(/\s/g,'');
+  if(/^\d{4}$/.test(t)) return t.slice(0,2)+':'+t.slice(2);
+  return t;
+}
+var ALL_AL='CI|BR|KE|OZ|CX|JL|NH|SQ|MH|TG|IT|B7|AE|EK|QR|TK|LH|UA|AA|DL|AF|KL|QF|NZ|GA|MI|FD|VN|PR|GE|NX|AK|D7|TR|JQ|WS|AC|VS|IB|AZ|SK|LX|OS|SN|TP|HX|FM|MU|CA|CZ|HU|3U|ZH|UO';
+function parseTicket(txt){
+  if(!txt||txt.length<50) return {segs:[],passengers:[],ref:'',destination:'',country:'',flag:'✈️'};
+  var t=txt.replace(/\s+/g,' ');
+  var res={segs:[],passengers:[],ref:'',destination:'',country:'',flag:'✈️'};
+
+  // ── 訂位代號 ──
+  var rm=t.match(/(?:Booking\s*Ref|PNR|Reference|電腦代號)[:\s：]+([A-Z0-9]{6})\b/i)||
+         t.match(/\b([A-Z]{2}[A-Z0-9]{4})\b/);
+  if(rm) res.ref=rm[1];
+
+  // ── 乘客姓名：三層策略，從最精確到最寬鬆 ──
+  // 已知 PDF 內部關鍵字黑名單（CMap/字型定義常見字串）
+  var PDF_KW=/^(PROCSET|CIDINIT|FINDR|FINDRESOURCE|RESOURCES|CONTENT|STREAM|XOBJECT|FONT|ENCODING|TOUNICODE|WIDTHS|BBOX|FONTDESC|REGISTRY|ORDERING|SUPPLEMENT|BEGINCMAP|ENDCMAP|BEGINBFCHAR|ENDBFCHAR|CMAP|CMAPNAME|TYPE|WMODE|USECMAP)$/;
+  function addPax(last,first){
+    if(!last||!first) return;
+    if(PDF_KW.test(last.toUpperCase())||PDF_KW.test(first.toUpperCase())) return;
+    var en=(last+'/'+first).replace(/\s+/g,' ').trim().toUpperCase();
+    if(en.length>4&&!res.passengers.find(function(p){return p.nameEn===en;}))
+      res.passengers.push({nameEn:en,name:en,ticket:'',pp:'',ppExp:'',phone:'',addr:''});
+  }
+  // 第一層：「Passenger 旅客：LAST/FIRSTMR」 明確標記（最可靠，澳門航空格式）
+  var pLbl=[...t.matchAll(/Passenger\s+旅客[：:\s]+([A-Z]{2,20})\s*\/\s*([A-Z]{2,25}?)(?=MR\b|MS\b|MRS\b|DR\b)/gi)];
+  pLbl.forEach(function(m){addPax(m[1],m[2]);});
+  // 第二層：「LAST/FIRST MR」 有空格版（韓亞、長榮等）
+  if(!res.passengers.length){
+    var pSp=[...t.matchAll(/([A-Z]{2,20})\s*\/\s*([A-Z][A-Z]{1,18})\s+(?:MR|MS|MRS|DR)\b/gi)];
+    pSp.forEach(function(m){addPax(m[1],m[2]);});
+  }
+  // 第三層：緊接 MR/MS 無空格（第二層補漏，加黑名單過濾）
+  if(!res.passengers.length){
+    var pNs=[...t.matchAll(/([A-Z]{2,20})\s*\/\s*([A-Z]{2,25}?)(?=MR\b|MS\b|MRS\b|DR\b)/gi)];
+    pNs.forEach(function(m){addPax(m[1],m[2]);});
+  }
+
+  // ── 機票號碼 ──
+  var tm=[...t.matchAll(/\b(\d{3}-\d{10})\b/g)];
+  tm.forEach(function(m,i){if(res.passengers[i]) res.passengers[i].ticket=m[1];});
+
+  // 台灣機場代碼（用於判斷出去/回來方向）
+  var TW_AP=['TPE','RMQ','KHH','TSA','TNN','CKS','TTT','HUN','KNH','MZG','LZN','GNI','WOT'];
+  function isTW(c){return TW_AP.indexOf((c||'').toUpperCase())>=0;}
+  function segDir(dc,ac){
+    if(isTW(dc)&&!isTW(ac)) return 'out';   // 從台灣出發 → 去程
+    if(!isTW(dc)&&isTW(ac)) return 'in';    // 飛回台灣 → 回程
+    return 'other';                          // 轉機段
+  }
+
+  // ── 航班段：方法一：傳統格式 FLIGHT DATE FROM HH:MM TO HH:MM ──
+  var sp1=new RegExp('\\b((?:'+ALL_AL+')\\s*\\d{1,4})\\b[\\s\\S]{0,200}?(\\d{2}[A-Z]{3}\\d{2,4}|\\d{4}-\\d{2}-\\d{2})\\s+([A-Z]{3})\\s+(\\d{1,2}:\\d{2})\\s+([A-Z]{3})\\s+(\\d{1,2}:\\d{2})','g');
+  var m2;
+  while((m2=sp1.exec(t))!==null){
+    var dd=normDate(m2[2]);
+    res.segs.push({dir:segDir(m2[3],m2[5]),fl:m2[1].replace(/\s/g,''),
+      dd:dd,dc:m2[3],dt:m2[4],ac:m2[5],at:m2[6],
+      dct:m2[3],act:m2[5],ad:dd,dterm:'',aterm:'',ac2:'',dur:'',cab:'',bag:''});
+  }
+
+  // ── 航班段：方法二：DEP/ARR 格式（澳門航空、中華航空等）──
+  if(res.segs.length===0){
+    var sp2=new RegExp(
+      '(\\d{2}[A-Z]{3}\\d{2,4})\\s+((?:'+ALL_AL+')\\d{1,4})\\s+DEP\\s+(\\d{3,4}|\\d{1,2}:\\d{2})'+
+      '[\\s\\S]{3,500}?\\(([A-Z]{3})\\)'+
+      '[\\s\\S]{0,700}?ARR\\s+(\\d{3,4}|\\d{1,2}:\\d{2})'+
+      '[\\s\\S]{3,300}?\\(([A-Z]{3})\\)',
+      'g');
+    while((m2=sp2.exec(t))!==null){
+      var dd=normDate(m2[1]);
+      var dt=normTime(m2[3]);
+      var at=normTime(m2[5]);
+      res.segs.push({dir:segDir(m2[4],m2[6]),fl:m2[2].replace(/\s/g,''),
+        dd:dd,dc:m2[4],dt:dt,ac:m2[6],at:at,
+        dct:m2[4],act:m2[6],ad:dd,dterm:'',aterm:'',ac2:'',dur:'',cab:'',bag:''});
+    }
+  }
+
+  // 依日期排序（確保去程在前）
+  res.segs.sort(function(a,b){return (a.dd+a.dt).localeCompare(b.dd+b.dt);});
+
+  if(res.segs.length>0){
+    var lo=res.segs.filter(function(s){return s.dir==='out';}).pop();
+    if(!lo) lo=res.segs[0]; // fallback：沒找到台灣出發段，用第一段
+    if(lo){res.destination=lo.ac;res.country=guessCountry(lo.ac);res.flag=cFlag(res.country);}
+  }
+  return res;
+}
+
+var MONTHS={JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
+function normDate(s){
+  s=(s||'').toUpperCase().replace(/\s/g,'');
+  var m4=s.match(/^(\d{2})([A-Z]{3})(\d{4})$/);  // 11MAY2026
+  if(m4) return m4[3]+'-'+(MONTHS[m4[2]]||'01')+'-'+m4[1];
+  var m2=s.match(/^(\d{2})([A-Z]{3})(\d{2})$/);  // 11MAY26 → 2026-05-11
+  if(m2) return '20'+m2[3]+'-'+(MONTHS[m2[2]]||'01')+'-'+m2[1];
+  return s.replace(/\//g,'-');
+}
+function guessCountry(c){
+  var m={LAS:'美國',LAX:'美國',SFO:'美國',JFK:'美國',ORD:'美國',SEA:'美國',HNL:'美國',
+    NRT:'日本',KIX:'日本',HND:'日本',NGO:'日本',CTS:'日本',OKA:'日本',FUK:'日本',
+    ICN:'韓國',GMP:'韓國',PUS:'韓國',
+    HKG:'香港',MFM:'澳門',
+    SIN:'新加坡',BKK:'泰國',HKT:'泰國',DMK:'泰國',
+    KUL:'馬來西亞',PEN:'馬來西亞',LGK:'馬來西亞',
+    LHR:'英國',CDG:'法國',FRA:'德國',AMS:'荷蘭',
+    SYD:'澳洲',MEL:'澳洲',AKL:'紐西蘭',
+    DXB:'阿聯酋',DOH:'卡達',
+    VIE:'奧地利',ZRH:'瑞士',BCN:'西班牙',MAD:'西班牙',FCO:'義大利',MXP:'義大利',
+    BNE:'澳洲',PER:'澳洲',CBR:'澳洲',
+    MNL:'菲律賓',CEB:'菲律賓',SGN:'越南',HAN:'越南',RGN:'緬甸',
+    DEL:'印度',BOM:'印度',CMB:'斯里蘭卡',KTM:'尼泊爾',
+    TPE:'台灣',RMQ:'台灣',KHH:'台灣',TSA:'台灣'};
+  return m[c]||c||'';
+}
+function cFlag(c){
+  var m={'美國':'🇺🇸','日本':'🇯🇵','韓國':'🇰🇷','香港':'🇭🇰','澳門':'🇲🇴','新加坡':'🇸🇬',
+    '泰國':'🇹🇭','馬來西亞':'🇲🇾','英國':'🇬🇧','法國':'🇫🇷','德國':'🇩🇪','荷蘭':'🇳🇱',
+    '澳洲':'🇦🇺','紐西蘭':'🇳🇿','阿聯酋':'🇦🇪','卡達':'🇶🇦','奧地利':'🇦🇹','瑞士':'🇨🇭',
+    '西班牙':'🇪🇸','義大利':'🇮🇹','菲律賓':'🇵🇭','越南':'🇻🇳','緬甸':'🇲🇲',
+    '印度':'🇮🇳','斯里蘭卡':'🇱🇰','尼泊爾':'🇳🇵','台灣':'🇹🇼'};
+  return m[c]||'✈️';
+}
+
+function mergeResults(arr){
+  if(!arr.length) return null;
+  var base=JSON.parse(JSON.stringify(arr[0]));
+  for(var i=1;i<arr.length;i++){
+    arr[i].passengers.forEach(function(p){
+      if(!base.passengers.find(function(q){return q.nameEn===p.nameEn;})) base.passengers.push(p);
+    });
+    arr[i].passengers.forEach(function(p){
+      var bp=base.passengers.find(function(q){return q.nameEn===p.nameEn;});
+      if(bp&&p.ticket) bp.ticket=p.ticket;
+    });
+    arr[i].segs.forEach(function(s){
+      if(!base.segs.find(function(b){return b.fl===s.fl&&b.dd===s.dd;})) base.segs.push(s);
+    });
+  }
+  if(!base.ref&&arr[1]&&arr[1].ref) base.ref=arr[1].ref;
+  return base;
+}
+
+function buildTripFromParsed(d,eventName,hotelName,hotelPrice){
+  var fc=d.segs[0];
+  var lc=d.segs.filter(function(s){return s.dir==='in';}).pop()||d.segs[d.segs.length-1];
+  var nights=0;
+  try{var d1=new Date(fc&&fc.dd||''),d2=new Date(lc&&lc.dd||'');nights=Math.max(0,Math.round((d2-d1)/864e5));}catch{}
+  // 嘗試以英文名找到對應的中文名及員工資料
+  var resolvedPax=d.passengers.map(function(p){
+    var emp=lookupEmpByEnName(p.name)||lookupEmpByEnName(p.nameEn);
+    if(emp){
+      return {name:emp.name,nameEn:p.nameEn||emp.nameEn,ticket:p.ticket||'',
+        pp:p.pp||emp.pp||'',ppExp:p.ppExp||emp.ppExp||'',
+        phone:p.phone||emp.phone||'',addr:p.addr||emp.addr||''};
+    }
+    return p;
+  });
+  return {
+    id:'trip_'+Date.now(),destination:d.destination,country:d.country,flag:d.flag,
+    event:eventName||d.destination,status:'upcoming',
+    passengers:resolvedPax,ref:d.ref,segs:d.segs,
+    hotel:{name:hotelName||'尚未設定',nights:nights,cin:fc?fc.dd:'',cout:lc?lc.dd:'',
+      price:hotelPrice?Number(hotelPrice):0,booked:!!hotelName},
+    todos:DEFAULT_TODOS.map(function(t){return {id:t.id,text:t.text,done:false};}),
+    sheetsUrl:'https://docs.google.com/spreadsheets/d/15fjQ_oQKwLlR8dYKsIjADKDO3hNJD5Ier77JNt1glEk/edit#gid=47702322'
+  };
+}
+
+function showParseResult(d){
+  var fc=d.segs[0],lc=d.segs[d.segs.length-1];
+  document.getElementById('pr').innerHTML=
+    '<div class="ctitle">解析結果 — 已自動帶出所有頁籤</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">填寫下方補充資訊後，點「儲存並查看」完成建立。</div>'+
+    (fc?'<div style="font-size:13px;padding:4px 0"><span style="color:var(--muted)">出發</span> <b>'+fc.dd+'</b> &nbsp; <span style="color:var(--muted)">返台</span> <b>'+(lc?lc.ad||lc.dd:'—')+'</b></div>':'')+
+    '<div style="font-size:13px;padding:4px 0"><span style="color:var(--muted)">旅客</span> <b>'+d.passengers.map(function(p){return p.name||p.nameEn;}).join('、')+'</b></div>'+
+    '<div style="font-size:13px;padding:4px 0"><span style="color:var(--muted)">航段</span> <b>'+d.segs.length+' 段</b> &nbsp; <span style="color:var(--muted)">目的地</span> <b>'+d.destination+' '+d.flag+'</b></div>'+
+    (d.ref?'<div style="font-size:13px;padding:4px 0"><span style="color:var(--muted)">訂位</span> <b>'+d.ref+'</b></div>':'')+
+    '<div class="draft-banner" style="margin-top:10px">可點「查看預覽」先查看自動帶出的各頁籤資料 &nbsp; <button class="bs bp" style="padding:4px 12px;font-size:12px" onclick="go(\'sde\')">查看預覽</button></div>';
+}
+
+function saveFromPreview(){
+  // Save directly from the detail preview screen
+  if(!parsed){toast('請先上傳 PDF');return;}
+  var newTrip=buildTripFromParsed(parsed,'','','');
+  newTrip.id='trip_'+Date.now();
+  addOrUpdateTrip(newTrip);
+  curId=newTrip.id;
+  parsed=null;
+  toast('✅ 行程已儲存！');
+  setTimeout(function(){showDetail(newTrip,false);},400);
+}
+function saveTrip(){
+  if(!parsed){toast('請先上傳 PDF');return;}
+  var ev=document.getElementById('ev').value.trim();
+  var hn=document.getElementById('hn').value.trim();
+  var hpr=document.getElementById('hpr').value.trim();
+  var newTrip=buildTripFromParsed(parsed,ev,hn,hpr);
+  addOrUpdateTrip(newTrip);
+  curId=newTrip.id;
+  parsed=null;
+  toast('✅ 儲存成功！');
+  setTimeout(function(){showDetail(newTrip,false);},400);
+}
+
+// ═══════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════
+// ── 報告頁籤渲染 ──
+function rReport(trip){
+  var el=document.getElementById('tr');
+  if(!el) return;
+  var txt=buildReportText(trip);
+  el._rptTxt=txt;
+  el.innerHTML=
+    '<div style="padding:14px">'+
+    '<div style="display:flex;gap:10px;margin-bottom:14px">'+
+      '<button class="bs bp" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px" onclick="cpText(document.getElementById(\'tr\')._rptTxt)">'+
+        icn('copy',15,'#fff')+' 複製報告</button>'+
+      '<button onclick="shareToLine(document.getElementById(\'tr\')._rptTxt)" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:#06c755;border:none;border-radius:var(--rs);color:#fff;font-size:14px;font-weight:700;cursor:pointer;padding:10px 0">'+
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M12 2C6.48 2 2 6.04 2 11c0 3.26 1.76 6.13 4.41 7.85L6 22l3.73-1.95C10.43 20.34 11.2 20.5 12 20.5c5.52 0 10-4.04 10-9.5S17.52 2 12 2z"/></svg>'+
+        '傳送 LINE</button>'+
+    '</div>'+
+    '<pre style="white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:13px;line-height:1.8;color:var(--text);background:var(--bg);border-radius:8px;padding:16px;border:1px solid var(--border);margin:0;overflow-x:auto">'+escHtml(txt)+'</pre>'+
+    '</div>';
+}
+function shareToLine(txt){
+  window.open('https://line.me/R/msg/text/?'+encodeURIComponent(txt),'_blank');
+}
+
+// ── 差旅費地區費率 ──
+function _allowanceRate(dest){
+  var d=(dest||'').toLowerCase();
+  var dev70=['中國','大陸','北京','上海','廣州','深圳','成都','武漢','杭州','南京','重慶','西安',
+    'china','beijing','shanghai','guangzhou','shenzhen','chengdu',
+    '香港','hong kong','hk',
+    '澳門','macao','macau',
+    '泰國','thailand','bangkok','曼谷',
+    '新加坡','singapore',
+    '馬來西亞','malaysia','kuala lumpur','吉隆坡',
+    '越南','vietnam','hanoi','河內','ho chi minh','胡志明',
+    '菲律賓','philippines','manila','馬尼拉',
+    '印尼','indonesia','jakarta','雅加達','峇里','bali',
+    '緬甸','myanmar','yangon','仰光',
+    '柬埔寨','cambodia','phnom penh','金邊',
+    '寮國','laos','汶萊','brunei',
+    '非洲','africa','cairo','開羅','奈洛比','nairobi','johannesburg','約翰尼斯堡',
+    '中南美洲','南美','巴西','brazil','阿根廷','argentina','智利','chile',
+    '哥倫比亞','colombia','秘魯','peru','墨西哥','mexico','巴拿馬','panama'];
+  for(var i=0;i<dev70.length;i++){if(d.indexOf(dev70[i])>=0)return 70;}
+  return 90;
+}
+function _rateLabel(rate){
+  return rate===70
+    ? '中國大陸/港澳/東南亞/非洲/中南美洲（開發中國家）'
+    : '北美/歐洲/紐澳/日本/南韓（已開發國家）';
+}
+
+// ── 天數與津貼計算 ──
+function _calcDays(deptDate,deptTime,retDate,retTime){
+  function hhmm(t){if(!t)return 0;var p=(t||'00:00').split(':');return parseInt(p[0]||0)*100+parseInt(p[1]||0);}
+  var dt=hhmm(deptTime), rt=hhmm(retTime);
+  // 出發日：16:00含前=全日，16:00後=半日
+  var dCoef=dt<=1600?1.0:0.5;
+  var dLabel=dt<=1600?'全日（'+deptTime+' ≤ 16:00）':'半日（'+deptTime+' > 16:00）';
+  // 返國日：12:00前=半日，12:00後=全日
+  var rCoef=rt<1200?0.5:1.0;
+  var rLabel=rt<1200?'半日（'+retTime+' < 12:00）':'全日（'+retTime+' ≥ 12:00）';
+  // 中間完整天數
+  var mid=0;
+  if(deptDate&&retDate&&deptDate!==retDate){
+    var diff=Math.round((new Date(retDate)-new Date(deptDate))/(864e5));
+    mid=Math.max(0,diff-1);
+  }
+  var total= deptDate===retDate ? Math.max(dCoef,rCoef) : dCoef+mid+rCoef;
+  return {dCoef:dCoef,dLabel:dLabel,rCoef:rCoef,rLabel:rLabel,mid:mid,total:total};
+}
+
+function buildReportText(trip){
+  var segs=trip.segs||[];
+  var out=segs.filter(function(s){return s.dir==='out';});
+  var inb=segs.filter(function(s){return s.dir==='in';});
+  var firstOut=out[0], lastInb=inb[inb.length-1];
+
+  // 差旅費計算
+  var rate=_allowanceRate(trip.destination);
+  var deptDate=firstOut?firstOut.dd:'';
+  var deptTime=firstOut?firstOut.dt:'08:00';
+  var retDate=lastInb?(lastInb.ad&&lastInb.ad!==lastInb.dd?lastInb.ad:lastInb.dd):'';
+  var retTime=lastInb?lastInb.at:'12:00';
+  var days=_calcDays(deptDate,deptTime,retDate,retTime);
+  var numPax=trip.passengers.length;
+  var totalUSD=days.total*rate*numPax;
+
+  var lines=[
+    '═══════════════════════════',
+    'GAMA TECHNOLOGY  差旅報告',
+    '═══════════════════════════',
+    '出差人員：'+trip.passengers.map(function(p){return p.name;}).join('、'),
+    '出差地點：'+(trip.destination||'—')+(trip.flag?' '+trip.flag:''),
+    '活動名稱：'+(trip.event||'—'),
+    '訂位代號：'+(trip.ref||'—'),
+    ''
+  ];
+
+  // 去程
+  if(out.length){
+    lines.push('【去程航班】');
+    out.forEach(function(s){
+      var ad=s.ad&&s.ad!==s.dd?' (抵'+s.ad+')':'';
+      lines.push('  '+s.fl+'  '+s.dd+' '+s.dt+' '+s.dc+' → '+s.at+ad+' '+s.ac+(s.cab?' ('+s.cab+')':''));
+    });
+    lines.push('');
+  }
+  // 回程
+  if(inb.length){
+    lines.push('【回程航班】');
+    inb.forEach(function(s){
+      var ad=s.ad&&s.ad!==s.dd?' (抵'+s.ad+')':'';
+      lines.push('  '+s.fl+'  '+s.dd+' '+s.dt+' '+s.dc+' → '+s.at+ad+' '+s.ac+(s.cab?' ('+s.cab+')':''));
+    });
+    lines.push('');
+  }
+
+  // 出差天數
+  lines.push('【出差天數】');
+  if(deptDate) lines.push('  出發日 '+deptDate+'：'+days.dLabel);
+  if(days.mid>0) lines.push('  完整在外天數：'+days.mid+' 天（全日計）');
+  if(retDate&&retDate!==deptDate) lines.push('  返國日 '+retDate+'：'+days.rLabel);
+  lines.push('  合計：'+days.total+' 日');
+  lines.push('');
+
+  // 差旅費（每人分開列）
+  var perPax=(days.total*rate);
+  lines.push('【差旅費津貼】');
+  lines.push('  地區費率：USD $'+rate+'/人/日（'+_rateLabel(rate)+'）');
+  lines.push('  出差天數：'+days.total+' 日');
+  lines.push('');
+  trip.passengers.forEach(function(p){
+    lines.push('  '+p.name+'：USD $'+perPax.toFixed(1));
+  });
+  lines.push('  ───────────────────');
+  lines.push('  總計：USD $'+totalUSD.toFixed(1)+'（'+numPax+' 人）');
+  lines.push('  ※ 如遇班機延誤，依實際抵達時間調整計算');
+  lines.push('');
+
+  // 飯店
+  var h=trip.hotel||{};
+  if(h.name){
+    lines.push('【飯店住宿】');
+    lines.push('  '+h.name+'  '+( h.cin||'')+'～'+(h.cout||'')+'  NT$ '+Number(h.price||0).toLocaleString());
+    lines.push('');
+  }
+
+  // 待辦
+  var todos=trip.todos||[];
+  if(todos.length){
+    lines.push('【待辦事項】');
+    todos.forEach(function(t){lines.push('  '+(t.done?'✅':'⬜')+' '+t.text);});
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+function exportRpt(){
+  if(!curId) return;
+  var trip=getTrips().find(function(t){return t.id===curId;});
+  if(!trip) return;
+  cpText(buildReportText(trip));
+}
+function cpRpt(id){curId=id;exportRpt();}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function cpText(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){toast('已複製到剪貼簿 ✓');}).catch(fb);
+  } else {fb();}
+  function fb(){
+    var ta=document.createElement('textarea');
+    ta.value=t;ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('已複製 ✓');}catch{toast('請手動複製');}
+    document.body.removeChild(ta);
+  }
+}
+var _toastTimer=null;
+function toast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('on');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(function(){el.classList.remove('on');},2500);
+}
+function setLoad(on){document.getElementById('loading').classList[on?'add':'remove']('on');}
+
+// ═══════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════
+renderDash();
+// 開啟時自動靜默同步（延遲 2 秒，等 DOM 穩定）
+setTimeout(function(){ syncFromSheets(null, true); }, 2000);
+// 每 10 分鐘背景定時同步
+setInterval(function(){ syncFromSheets(null, true); }, 10*60*1000);
+
+// ═══════════════════════════════════════
+// PWA — Service Worker + 安裝橫幅
+// ═══════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+
+var _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  _deferredPrompt=e;
+  var b=document.getElementById('pwa-banner');
+  if(b) b.classList.add('show');
+});
+window.addEventListener('appinstalled',function(){
+  var b=document.getElementById('pwa-banner');
+  if(b) b.classList.remove('show');
+  _deferredPrompt=null;
+  toast('✅ 已成功安裝到主畫面！');
+});
+function installPWA(){
+  if(!_deferredPrompt) return;
+  _deferredPrompt.prompt();
+  _deferredPrompt.userChoice.then(function(r){
+    if(r.outcome==='accepted') toast('✅ 安裝完成！');
+    _deferredPrompt=null;
+    var b=document.getElementById('pwa-banner');
+    if(b) b.classList.remove('show');
+  });
+}
+// iOS Safari 不支援 beforeinstallprompt，改顯示手動引導
+(function(){
+  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  var isStandalone=('standalone' in navigator&&navigator.standalone)||
+                   window.matchMedia('(display-mode:standalone)').matches;
+  if(isIOS&&!isStandalone){
+    var shown=localStorage.getItem('pwa_ios_hint');
+    if(!shown){
+      var el=document.getElementById('pwa-ios');
+      if(el) el.classList.add('show');
+      localStorage.setItem('pwa_ios_hint','1');
+    }
+  }
+})();
+</script>
+</body>
+</html>
