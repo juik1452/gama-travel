@@ -1158,8 +1158,8 @@ function renderDash(){
     var bl2=trip.status==='upcoming'?'即將出發':trip.status==='active'?'進行中':'已結束';
     h+='<div class="tc">'+
       '<div class="tc-hd"><div class="tc-flag">'+icn('plane',22,'#1e3560')+'</div><div>'+
-      '<div class="tc-dest">'+trip.destination+' <span class="badge '+bl+'">'+bl2+'</span></div>'+
-      '<div class="tc-ev">'+(trip.event||'')+'</div></div></div>'+
+      '<div class="tc-dest">'+(trip.destination||trip.country||'—')+' <span class="badge '+bl+'">'+bl2+'</span></div>'+
+      '<div class="tc-ev">'+(trip.purpose||trip.event||'')+'</div></div></div>'+
       '<div class="tc-dates">'+
       (out?'<span style="display:flex;align-items:center;gap:4px">'+icn('plane',12,'#8b94b5')+' 出發 '+out.dd+' '+out.dt+'</span>':'')+
       (inb?'<span style="display:flex;align-items:center;gap:4px">'+icn('arrive',12,'#8b94b5')+' 返回 '+inb.ad+' '+inb.at+'</span>':'')+
@@ -1321,7 +1321,7 @@ function buildVisaEn(p,trip){
     'INBOUND FLIGHT         : '+(out?out.fl+' '+out.dd:''),
     'OUTBOUND FLIGHT        : '+(inb?inb.fl+' '+inb.dd:''),
     'DESTINATION            : '+(trip.destination||''),
-    'EVENT / PURPOSE        : '+(trip.event||''),
+    'PURPOSE OF VISIT       : '+(trip.purpose||trip.event||'BUSINESS'),
     'HOME ADDRESS           : '+addr,
   ].join('\n');
 }
@@ -3344,10 +3344,10 @@ function buildReportText(trip){
   var numPax=trip.passengers.length;
   var totalUSD=billable*rate*numPax;
 
+  var dest=trip.destination||trip.country||'—';
   var lines=[
     '出差人員：'+trip.passengers.map(function(p){return p.name;}).join('、'),
-    '出差地點：'+(trip.destination||'—')+(trip.flag?' '+trip.flag:''),
-    '活動名稱：'+(trip.event||'—'),
+    '出差地點：'+dest+(trip.flag&&trip.flag!=='✈️'?' '+trip.flag:''),
     '出差目的：'+(trip.purpose||'—'),
     '訂位代號：'+(trip.ref||'—'),
     ''
