@@ -1747,8 +1747,12 @@ function rHotel(trip){
     '</div>';
 
   // ── 已訂房資訊 ──
+  var cleanHotelName=(h.name||'尚未設定')
+    .replace(/\s*(?:address|地址|addr\.|tel\.?|電話|phone|fax|zip|郵遞區號|check[\-\s]?in|入住).*/i,'')
+    .replace(/\s*[,，。:：]\s*\d.*$/,'')   // 截斷「: 數字開頭的地址」
+    .trim()||'尚未設定';
   html+='<div class="hc">'+
-    '<div class="hn">'+(h.name||'尚未設定')+'</div>'+
+    '<div class="hn">'+escHtml(cleanHotelName)+'</div>'+
     '<div class="hm">'+
     (h.cin?'<span>入住 '+h.cin+'</span>':'')+
     (h.cout?'<span>退房 '+h.cout+'</span>':'')+
@@ -3408,13 +3412,6 @@ function buildReportText(trip){
   lines.push('  ※ 如遇班機延誤，依實際抵達時間調整計算');
   lines.push('');
 
-  // 飯店
-  var h=trip.hotel||{};
-  if(h.name){
-    lines.push('【飯店住宿】');
-    lines.push('  '+h.name+'  '+(h.cin||'')+'～'+(h.cout||'')+(h.nights?' （'+h.nights+' 晚）':''));
-    lines.push('');
-  }
 
   return lines.join('\n');
 }
