@@ -2972,6 +2972,7 @@ function buildTripFromParsed(d,eventName,hotelName,hotelPrice){
     hotel:{name:hotelName||'尚未設定',nights:nights,cin:fc?fc.dd:'',cout:lc?lc.dd:'',
       price:hotelPrice?Number(hotelPrice):0,booked:!!hotelName},
     todos:DEFAULT_TODOS.map(function(t){return {id:t.id,text:t.text,done:false};}),
+    personalDays:[],
     sheetsUrl:'https://docs.google.com/spreadsheets/d/15fjQ_oQKwLlR8dYKsIjADKDO3hNJD5Ier77JNt1glEk/edit#gid=47702322'
   };
 }
@@ -3021,7 +3022,64 @@ function rReport(trip){
   if(!el) return;
   var txt=buildReportText(trip);
   el._rptTxt=txt;
+
+  // ── 私人行程卡片 ──
+  var pds=trip.personalDays||[];
+  var pdTotal=_countPersonalDays(pds);
+  var tid=trip.id;
+
+  var pdRows='';
+  pds.forEach(function(pd,i){
+    var dCnt=_countPersonalDays([pd]);
+    pdRows+=
+      '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border)">'+
+        '<div style="flex:1">'+
+          '<div style="font-size:13px;font-weight:600">'+
+            escHtml(pd.start)+(pd.end&&pd.end!==pd.start?' ～ '+escHtml(pd.end):'')+
+            ' <span style="font-weight:400;color:var(--muted)">（'+dCnt+' 天）</span>'+
+          '</div>'+
+          (pd.note?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+escHtml(pd.note)+'</div>':'')+
+        '</div>'+
+        '<button onclick="removePersonalDay(\''+tid+'\','+i+')" '+
+          'style="color:var(--danger);font-size:20px;line-height:1;padding:2px 8px;background:none;border:none;cursor:pointer;flex-shrink:0">×</button>'+
+      '</div>';
+  });
+
+  var pdCard=
+    '<div class="card" style="margin:14px 14px 0">'+
+      '<div class="ctitle" style="margin-bottom:10px">🏖 私人行程（自費天數）</div>'+
+      (pds.length===0
+        ? '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">尚未設定——若部分天數屬私人行程，可在此設定，差旅費將自動扣除。</div>'
+        : pdRows+
+          '<div style="font-size:13px;font-weight:700;color:var(--warn);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">'+
+            '共 '+pdTotal+' 天已從差旅費計費天數中扣除</div>'
+      )+
+      '<div id="pd-form" style="display:none;margin-top:10px;padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">'+
+        '<div style="font-size:12px;font-weight:700;color:var(--pri);margin-bottom:10px">新增私人行程日期</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
+          '<div>'+
+            '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">開始日期</div>'+
+            '<input type="date" id="pd-s" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">'+
+          '</div>'+
+          '<div>'+
+            '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">結束日期</div>'+
+            '<input type="date" id="pd-e" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">'+
+          '</div>'+
+        '</div>'+
+        '<input type="text" id="pd-n" placeholder="備註（選填，如：探親、觀光）" '+
+          'style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;margin-bottom:10px;outline:none">'+
+        '<div style="display:flex;gap:8px">'+
+          '<button class="bs bp" style="flex:1" onclick="savePersonalDay(\''+tid+'\')">確認新增</button>'+
+          '<button class="bs bo" style="flex:1" onclick="document.getElementById(\'pd-form\').style.display=\'none\'">取消</button>'+
+        '</div>'+
+      '</div>'+
+      '<button class="bs bo" style="width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px" '+
+        'onclick="document.getElementById(\'pd-form\').style.display=\'block\';document.getElementById(\'pd-s\').focus()">'+
+        '＋ 新增私人行程</button>'+
+    '</div>';
+
   el.innerHTML=
+    pdCard+
     '<div style="padding:14px">'+
     '<div style="display:flex;gap:10px;margin-bottom:14px">'+
       '<button class="bs bp" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px" onclick="cpText(document.getElementById(\'tr\')._rptTxt)">'+
@@ -3085,6 +3143,44 @@ function _calcDays(deptDate,deptTime,retDate,retTime){
   return {dCoef:dCoef,dLabel:dLabel,rCoef:rCoef,rLabel:rLabel,mid:mid,total:total};
 }
 
+// ── 私人行程天數計算 ──
+function _countPersonalDays(pds){
+  if(!pds||!pds.length) return 0;
+  var total=0;
+  pds.forEach(function(pd){
+    if(!pd.start) return;
+    var s=new Date(pd.start), e=new Date(pd.end||pd.start);
+    if(isNaN(s.getTime())||isNaN(e.getTime())) return;
+    if(e<s) e=s;
+    total+=Math.round((e-s)/864e5)+1;
+  });
+  return total;
+}
+function savePersonalDay(tripId){
+  var s=document.getElementById('pd-s').value;
+  var e=document.getElementById('pd-e').value||s;
+  var n=(document.getElementById('pd-n').value||'').trim();
+  if(!s){toast('請選擇開始日期');return;}
+  if(e<s) e=s;
+  var trips=getTrips();
+  var trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  if(!trip.personalDays) trip.personalDays=[];
+  trip.personalDays.push({start:s,end:e,note:n});
+  addOrUpdateTrip(trip);
+  toast('已新增私人行程 ✓');
+  rReport(trip);
+}
+function removePersonalDay(tripId,idx){
+  var trips=getTrips();
+  var trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip||!trip.personalDays) return;
+  trip.personalDays.splice(idx,1);
+  addOrUpdateTrip(trip);
+  toast('已刪除 ✓');
+  rReport(trip);
+}
+
 function buildReportText(trip){
   var segs=trip.segs||[];
   var out=segs.filter(function(s){return s.dir==='out';});
@@ -3098,8 +3194,10 @@ function buildReportText(trip){
   var retDate=lastInb?(lastInb.ad&&lastInb.ad!==lastInb.dd?lastInb.ad:lastInb.dd):'';
   var retTime=lastInb?lastInb.at:'12:00';
   var days=_calcDays(deptDate,deptTime,retDate,retTime);
+  var pdTotal=_countPersonalDays(trip.personalDays||[]);
+  var billable=Math.max(0,days.total-pdTotal);
   var numPax=trip.passengers.length;
-  var totalUSD=days.total*rate*numPax;
+  var totalUSD=billable*rate*numPax;
 
   var lines=[
     '═══════════════════════════',
@@ -3136,14 +3234,24 @@ function buildReportText(trip){
   if(deptDate) lines.push('  出發日 '+deptDate+'：'+days.dLabel);
   if(days.mid>0) lines.push('  完整在外天數：'+days.mid+' 天（全日計）');
   if(retDate&&retDate!==deptDate) lines.push('  返國日 '+retDate+'：'+days.rLabel);
-  lines.push('  合計：'+days.total+' 日');
+  lines.push('  出差合計：'+days.total+' 日');
+  if(pdTotal>0){
+    var pds=trip.personalDays||[];
+    lines.push('  私人行程（自費）：-'+pdTotal+' 日');
+    pds.forEach(function(pd){
+      var note=pd.note?' （'+pd.note+'）':'';
+      var rng=pd.start+(pd.end&&pd.end!==pd.start?' ～ '+pd.end:'');
+      lines.push('    • '+rng+note);
+    });
+    lines.push('  計費天數：'+billable+' 日');
+  }
   lines.push('');
 
   // 差旅費（每人分開列）
-  var perPax=(days.total*rate);
+  var perPax=(billable*rate);
   lines.push('【差旅費津貼】');
   lines.push('  地區費率：USD $'+rate+'/人/日（'+_rateLabel(rate)+'）');
-  lines.push('  出差天數：'+days.total+' 日');
+  lines.push('  計費天數：'+billable+' 日'+(pdTotal>0?' （已扣除私人行程 '+pdTotal+' 日）':''));
   lines.push('');
   trip.passengers.forEach(function(p){
     lines.push('  '+p.name+'：USD $'+perPax.toFixed(1));
