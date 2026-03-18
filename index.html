@@ -1517,7 +1517,10 @@ function parseHotelConfirmation(text){
   var nmatch=t.match(/(?:hotel|property|accommodation|飯店|酒店|旅館|住宿(?:名稱|飯店)?)\s*[：:\s]\s*([^\n,，。]{4,60})/i)
     ||t.match(/(?:你預訂了|您已預訂了|您的訂房|your stay at)\s+([^\n,，。]{4,60})/i);
   if(nmatch){
-    var raw=nmatch[1].trim().replace(/\s+/g,' ').replace(/[,，].*$/,'').trim();
+    var raw=nmatch[1].trim().replace(/\s+/g,' ')
+      .replace(/\s*(?:address|地址|addr\.|tel\.?|電話|phone|fax|zip|郵遞區號|check[\-\s]?in|入住).*/i,'')
+      .replace(/[,，。:：].*/,'')
+      .trim();
     if(raw.length>=3) r.name=raw;
   }
 
@@ -1751,14 +1754,6 @@ function rHotel(trip){
     (h.cout?'<span>退房 '+h.cout+'</span>':'')+
     (h.nights?'<span>'+h.nights+' 晚</span>':'')+
     '</div>'+
-    (h.price?'<div class="hp" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
-      '<span>'+_currSymbol(h.currency||'TWD')+' '+Number(h.price).toLocaleString()+'</span>'+
-      '<small style="color:var(--muted)">/ '+adults+' 人</small>'+
-      '<select onchange="setHotelCurrency(\''+trip.id+'\',this.value)" '+
-        'style="font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 6px;color:var(--text);background:#fff;cursor:pointer">'+
-        CURR_LIST.map(function(c){return '<option value="'+c+'"'+((h.currency||'TWD')===c?' selected':'')+'>'+c+'</option>';}).join('')+
-      '</select>'+
-    '</div>':'')+
     '<div class="hs '+(h.booked?'ok':'ng')+'">'+(h.booked?'已確認訂房':'訂房進行中')+'</div>'+
     '</div>';
 
