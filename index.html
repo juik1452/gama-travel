@@ -3407,7 +3407,7 @@ function buildReportText(trip){
   var h=trip.hotel||{};
   if(h.name){
     lines.push('【飯店住宿】');
-    lines.push('  '+h.name+'  '+(h.cin||'')+'～'+(h.cout||'')+'  '+_currSymbol(h.currency||'TWD')+' '+Number(h.price||0).toLocaleString()+(h.nights?' （'+h.nights+' 晚）':''));
+    lines.push('  '+h.name+'  '+(h.cin||'')+'～'+(h.cout||'')+(h.nights?' （'+h.nights+' 晚）':''));
     lines.push('');
   }
 
