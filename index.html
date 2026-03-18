@@ -1752,12 +1752,8 @@ function rHotel(trip){
     '</div>';
 
   // ── 已訂房資訊 ──
-  var cleanHotelName=(h.name||'尚未設定')
-    .replace(/\s*(?:address|地址|addr\.|tel\s*[:.]\s*\d|電話|phone\s*:|fax\s*:|zip\s*:|郵遞區號|check[\-\s]?in|入住).*/i,'')
-    .replace(/\s*[,，。:：]\s*\d.*$/,'')   // 截斷「: 數字開頭的地址」
-    .trim()||'尚未設定';
   html+='<div class="hc">'+
-    '<div class="hn">'+escHtml(cleanHotelName)+'</div>'+
+    '<div class="hn">'+(h.name||'尚未設定')+'</div>'+
     '<div class="hm">'+
     (h.cin?'<span>入住 '+h.cin+'</span>':'')+
     (h.cout?'<span>退房 '+h.cout+'</span>':'')+
