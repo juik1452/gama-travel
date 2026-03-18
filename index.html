@@ -382,6 +382,7 @@ if(typeof pdfjsLib!=='undefined'){
         <div class="ctitle">補充資訊（選填，之後可再編輯）</div>
         <div style="display:grid;gap:10px">
           <div><label class="lbl">活動 / 出差事由</label><input id="ev" class="inp" type="text" placeholder="例：Google Next 2026"></div>
+          <div><label class="lbl">出差目的</label><input id="purp" class="inp" type="text" placeholder="例：參加展覽、客戶拜訪、技術交流"></div>
           <div><label class="lbl">飯店名稱</label><input id="hn" class="inp" type="text" placeholder="例：紐約紐約大飯店"></div>
           <div><label class="lbl">飯店費用 (TWD)</label><input id="hpr" class="inp" type="number" placeholder="例：49540"></div>
         </div>
@@ -2589,7 +2590,7 @@ function resetUpload(){
   document.getElementById('fl').innerHTML='';
   document.getElementById('fcnt').textContent='';
   document.getElementById('ps').style.display='none';
-  ['ev','hn','hpr'].forEach(function(id){document.getElementById(id).value='';});
+  ['ev','purp','hn','hpr'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('fi').value='';
 }
 
@@ -2657,7 +2658,7 @@ function processFiles(){
       if(merged&&(merged.segs.length>0||merged.passengers.length>0)){
         parsed=merged;
         showParseResult(merged);
-        var previewTrip=buildTripFromParsed(merged,'','','');
+        var previewTrip=buildTripFromParsed(merged,'','','','');
         previewTrip.id='__preview__';
         curId='__preview__';
         showDetail(previewTrip,true);
@@ -3039,7 +3040,7 @@ function mergeResults(arr){
   return base;
 }
 
-function buildTripFromParsed(d,eventName,hotelName,hotelPrice){
+function buildTripFromParsed(d,eventName,purpose,hotelName,hotelPrice){
   var fc=d.segs[0];
   var lc=d.segs.filter(function(s){return s.dir==='in';}).pop()||d.segs[d.segs.length-1];
   var nights=0;
@@ -3056,7 +3057,7 @@ function buildTripFromParsed(d,eventName,hotelName,hotelPrice){
   });
   return {
     id:'trip_'+Date.now(),destination:d.destination,country:d.country,flag:d.flag,
-    event:eventName||d.destination,status:'upcoming',
+    event:eventName||d.destination,purpose:purpose||'',status:'upcoming',
     passengers:resolvedPax,ref:d.ref,segs:d.segs,
     hotel:{name:hotelName||'尚未設定',nights:nights,cin:fc?fc.dd:'',cout:lc?lc.dd:'',
       price:hotelPrice?Number(hotelPrice):0,currency:'TWD',booked:!!hotelName},
@@ -3081,7 +3082,7 @@ function showParseResult(d){
 function saveFromPreview(){
   // Save directly from the detail preview screen
   if(!parsed){toast('請先上傳 PDF');return;}
-  var newTrip=buildTripFromParsed(parsed,'','','');
+  var newTrip=buildTripFromParsed(parsed,'','','','');
   newTrip.id='trip_'+Date.now();
   addOrUpdateTrip(newTrip);
   curId=newTrip.id;
@@ -3092,9 +3093,10 @@ function saveFromPreview(){
 function saveTrip(){
   if(!parsed){toast('請先上傳 PDF');return;}
   var ev=document.getElementById('ev').value.trim();
+  var purp=document.getElementById('purp').value.trim();
   var hn=document.getElementById('hn').value.trim();
   var hpr=document.getElementById('hpr').value.trim();
-  var newTrip=buildTripFromParsed(parsed,ev,hn,hpr);
+  var newTrip=buildTripFromParsed(parsed,ev,purp,hn,hpr);
   addOrUpdateTrip(newTrip);
   curId=newTrip.id;
   parsed=null;
@@ -3339,12 +3341,10 @@ function buildReportText(trip){
   var totalUSD=billable*rate*numPax;
 
   var lines=[
-    '═══════════════════════════',
-    'GAMA TECHNOLOGY  差旅報告',
-    '═══════════════════════════',
     '出差人員：'+trip.passengers.map(function(p){return p.name;}).join('、'),
     '出差地點：'+(trip.destination||'—')+(trip.flag?' '+trip.flag:''),
     '活動名稱：'+(trip.event||'—'),
+    '出差目的：'+(trip.purpose||'—'),
     '訂位代號：'+(trip.ref||'—'),
     ''
   ];
