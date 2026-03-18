@@ -3031,14 +3031,33 @@ function rReport(trip){
   var pdRows='';
   pds.forEach(function(pd,i){
     var dCnt=_countPersonalDays([pd]);
+    var diff=pd.start&&pd.end?Math.round((new Date(pd.end)-new Date(pd.start))/864e5):0;
+    var sCoef=_pdStartCoef(pd.startTime), eCoef=_pdEndCoef(pd.endTime);
+    // 組合時間說明行
+    var timeDetail='';
+    if(diff===0){
+      // 同一天
+      var tStr=pd.startTime?pd.startTime:'—';
+      timeDetail='<div style="font-size:11px;color:var(--muted);margin-top:2px">'+
+        '開始 '+(pd.startTime||'未設定時間')+' → '+_pdLabel(sCoef)+
+      '</div>';
+    } else {
+      timeDetail='<div style="font-size:11px;color:var(--muted);margin-top:2px">'+
+        '起始日 '+(pd.startTime||'未設時間')+' → '+_pdLabel(sCoef)+
+        '｜中間 '+Math.max(0,diff-1)+' 全日'+
+        '｜結束日 '+(pd.endTime||'未設時間')+' → '+_pdLabel(eCoef)+
+      '</div>';
+    }
     pdRows+=
-      '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border)">'+
+      '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--border)">'+
         '<div style="flex:1">'+
           '<div style="font-size:13px;font-weight:600">'+
-            escHtml(pd.start)+(pd.end&&pd.end!==pd.start?' ～ '+escHtml(pd.end):'')+
-            ' <span style="font-weight:400;color:var(--muted)">（'+dCnt+' 天）</span>'+
+            escHtml(pd.start)+(pd.startTime?' '+escHtml(pd.startTime):'')+
+            (pd.end&&pd.end!==pd.start?' ～ '+escHtml(pd.end)+(pd.endTime?' '+escHtml(pd.endTime):''): '')+
+            ' <span style="background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;margin-left:4px">-'+dCnt+' 日</span>'+
           '</div>'+
-          (pd.note?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+escHtml(pd.note)+'</div>':'')+
+          timeDetail+
+          (pd.note?'<div style="font-size:11px;color:var(--pri);margin-top:2px">📝 '+escHtml(pd.note)+'</div>':'')+
         '</div>'+
         '<button onclick="removePersonalDay(\''+tid+'\','+i+')" '+
           'style="color:var(--danger);font-size:20px;line-height:1;padding:2px 8px;background:none;border:none;cursor:pointer;flex-shrink:0">×</button>'+
@@ -3055,16 +3074,27 @@ function rReport(trip){
             '共 '+pdTotal+' 天已從差旅費計費天數中扣除</div>'
       )+
       '<div id="pd-form" style="display:none;margin-top:10px;padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">'+
-        '<div style="font-size:12px;font-weight:700;color:var(--pri);margin-bottom:10px">新增私人行程日期</div>'+
+        '<div style="font-size:12px;font-weight:700;color:var(--pri);margin-bottom:10px">新增私人行程</div>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
           '<div>'+
-            '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">開始日期</div>'+
+            '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">開始日期 <span style="color:var(--danger)">*</span></div>'+
             '<input type="date" id="pd-s" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">'+
+          '</div>'+
+          '<div>'+
+            '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">開始時間 <span style="color:var(--muted);font-weight:400">（影響半日）</span></div>'+
+            '<input type="time" id="pd-st" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">'+
           '</div>'+
           '<div>'+
             '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">結束日期</div>'+
             '<input type="date" id="pd-e" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">'+
           '</div>'+
+          '<div>'+
+            '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">結束時間 <span style="color:var(--muted);font-weight:400">（影響半日）</span></div>'+
+            '<input type="time" id="pd-et" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">'+
+          '</div>'+
+        '</div>'+
+        '<div style="font-size:11px;color:var(--muted);background:#fff;border-radius:6px;padding:8px 10px;margin-bottom:8px;border:1px solid var(--border)">'+
+          '💡 <b>半日規則：</b>開始時間 > 12:00 → 當天扣半日｜結束時間 < 12:00 → 當天扣半日'+
         '</div>'+
         '<input type="text" id="pd-n" placeholder="備註（選填，如：探親、觀光）" '+
           'style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;margin-bottom:10px;outline:none">'+
@@ -3143,7 +3173,17 @@ function _calcDays(deptDate,deptTime,retDate,retTime){
   return {dCoef:dCoef,dLabel:dLabel,rCoef:rCoef,rLabel:rLabel,mid:mid,total:total};
 }
 
-// ── 私人行程天數計算 ──
+// ── 私人行程天數計算（含時間半日判斷）──
+// 開始當天：≤12:00 → 全日（1.0），>12:00 → 半日（0.5，上午仍為公務）
+// 結束當天：<12:00  → 半日（0.5，下午回歸公務），≥12:00 → 全日（1.0）
+// 中間天數：全日（1.0）
+function _pdHhmm(t){if(!t)return -1;var p=String(t).split(':');return parseInt(p[0]||0)*100+parseInt(p[1]||0);}
+function _pdStartCoef(t){var v=_pdHhmm(t);return(v<0||v<=1200)?1.0:0.5;}
+function _pdEndCoef(t){var v=_pdHhmm(t);return(v<0||v>=1200)?1.0:0.5;}
+function _pdLabel(coef){return coef===1.0?'全日':'半日';}
+function _pdStartLabel(t){var v=_pdHhmm(t);if(v<0)return '全日（未設時間）';return v<=1200?'全日（'+t+' ≤ 12:00）':'半日（'+t+' > 12:00，上午公務）';}
+function _pdEndLabel(t){var v=_pdHhmm(t);if(v<0)return '全日（未設時間）';return v>=1200?'全日（'+t+' ≥ 12:00）':'半日（'+t+' < 12:00，下午公務）';}
+
 function _countPersonalDays(pds){
   if(!pds||!pds.length) return 0;
   var total=0;
@@ -3152,13 +3192,23 @@ function _countPersonalDays(pds){
     var s=new Date(pd.start), e=new Date(pd.end||pd.start);
     if(isNaN(s.getTime())||isNaN(e.getTime())) return;
     if(e<s) e=s;
-    total+=Math.round((e-s)/864e5)+1;
+    var diff=Math.round((e-s)/864e5);
+    var sCoef=_pdStartCoef(pd.startTime);
+    var eCoef=_pdEndCoef(pd.endTime);
+    if(diff===0){
+      // 同一天：以開始時間為準（下午才開始私人 → 半日）
+      total+=sCoef;
+    } else {
+      total+=sCoef+Math.max(0,diff-1)+eCoef;
+    }
   });
   return total;
 }
 function savePersonalDay(tripId){
   var s=document.getElementById('pd-s').value;
   var e=document.getElementById('pd-e').value||s;
+  var st=(document.getElementById('pd-st').value||'').trim();
+  var et=(document.getElementById('pd-et').value||'').trim();
   var n=(document.getElementById('pd-n').value||'').trim();
   if(!s){toast('請選擇開始日期');return;}
   if(e<s) e=s;
@@ -3166,7 +3216,7 @@ function savePersonalDay(tripId){
   var trip=trips.find(function(t){return t.id===tripId;});
   if(!trip) return;
   if(!trip.personalDays) trip.personalDays=[];
-  trip.personalDays.push({start:s,end:e,note:n});
+  trip.personalDays.push({start:s,end:e,startTime:st,endTime:et,note:n});
   addOrUpdateTrip(trip);
   toast('已新增私人行程 ✓');
   rReport(trip);
@@ -3239,9 +3289,21 @@ function buildReportText(trip){
     var pds=trip.personalDays||[];
     lines.push('  私人行程（自費）：-'+pdTotal+' 日');
     pds.forEach(function(pd){
-      var note=pd.note?' （'+pd.note+'）':'';
-      var rng=pd.start+(pd.end&&pd.end!==pd.start?' ～ '+pd.end:'');
-      lines.push('    • '+rng+note);
+      var note=pd.note?' 【'+pd.note+'】':'';
+      var isSameDay=(!pd.end||pd.end===pd.start);
+      var diff2=isSameDay?0:Math.round((new Date(pd.end)-new Date(pd.start))/864e5);
+      var sCoef2=_pdStartCoef(pd.startTime), eCoef2=_pdEndCoef(pd.endTime);
+      var pdCnt2=_countPersonalDays([pd]);
+      if(isSameDay||diff2===0){
+        var tDesc=pd.startTime?'（'+pd.startTime+(sCoef2===0.5?' > 12:00 → 半日':' ≤ 12:00 → 全日')+'）':'（未設時間 → 全日）';
+        lines.push('    • '+pd.start+' '+tDesc+note+' = '+pdCnt2+' 日');
+      } else {
+        var startDesc=pd.startTime?pd.startTime+(sCoef2===0.5?' > 12:00 → 半日':' ≤ 12:00 → 全日'):'未設時間 → 全日';
+        var endDesc=pd.endTime?pd.endTime+(eCoef2===0.5?' < 12:00 → 半日':' ≥ 12:00 → 全日'):'未設時間 → 全日';
+        var midCnt=Math.max(0,diff2-1);
+        lines.push('    • '+pd.start+' ～ '+pd.end+note);
+        lines.push('      起始日（'+startDesc+'）＋中間 '+midCnt+' 全日＋結束日（'+endDesc+'） = '+pdCnt2+' 日');
+      }
     });
     lines.push('  計費天數：'+billable+' 日');
   }
