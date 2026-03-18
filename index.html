@@ -1489,17 +1489,27 @@ function parseHotelConfirmation(text){
   // 日期 pattern（支援多種格式）
   var DR='(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[\\/ ](?:[A-Za-z]{3,9})[\\/ ]\\d{2,4}|[A-Za-z]{3,9}[\\/ ,]\\s*\\d{1,2},?\\s*\\d{4}|\\d{4}年\\d{1,2}月\\d{1,2}日|\\d{1,2}\\/\\d{1,2}\\/\\d{4})';
 
+  // Agoda 三行格式取值：英文標籤\n中文標籤\n值
+  function agodaField(enKey){
+    var rx=new RegExp(enKey+'\\s*[：:][^\\n]*\\n[^\\n]*\\n\\s*([^\\n]{1,80})','i');
+    var m=t.match(rx);
+    return m?m[1].trim():'';
+  }
+
   function findDate(re){
     var m=t.match(re);
     if(!m) return '';
     for(var i=1;i<m.length;i++){var d=_hcNormDate(m[i]);if(d) return d;}
     return '';
   }
+  function findDateStr(s){ return s?_hcNormDate(s.trim()):''; }
 
-  // 入住日期
-  r.cin=findDate(new RegExp('(?:check[\\-\\s]?in|入住(?:日期)?)[\\s:：日年月]*'+DR,'i'));
+  // 入住日期 — 先嘗試 Agoda 三行格式，再 fallback 同行格式
+  r.cin = findDateStr(agodaField('Arrival'))
+       || findDate(new RegExp('(?:check[\\-\\s]?in|入住(?:日期)?|Arrival)[\\s:：日年月]*'+DR,'i'));
   // 退房日期
-  r.cout=findDate(new RegExp('(?:check[\\-\\s]?out|退房(?:日期)?|離店(?:日期)?)[\\s:：日年月]*'+DR,'i'));
+  r.cout= findDateStr(agodaField('Departure'))
+       || findDate(new RegExp('(?:check[\\-\\s]?out|退房(?:日期)?|離店(?:日期)?|Departure)[\\s:：日年月]*'+DR,'i'));
 
   // 住宿晚數
   var nm=t.match(/(\d+)\s*(?:nights?|晚|泊)/i);
@@ -1532,11 +1542,21 @@ function parseHotelConfirmation(text){
     ||t.match(/(?:USD|JPY|KRW|EUR|GBP|THB|SGD|MYR|HKD|AUD|NTD|NT\$|TWD|台幣|S\$|HK\$|A\$|RM)\s*([0-9,]{2,12})/i);
   if(pm) r.price=parseInt(pm[1].replace(/,/g,''),10)||0;
 
-  // 訂房確認編號
-  var rfm=t.match(/(?:booking\s*(?:id|no\.?|number|#)|confirmation\s*(?:no\.?|number|#|code)|agoda\s*(?:booking\s*id|id)|訂房(?:編號|號碼)|確認(?:號碼|編號|碼))[\\s:：#]*([A-Z0-9\-]{4,20})/i);
-  if(rfm) r.ref=rfm[1].trim();
+  // 訂房確認編號 — Agoda 三行格式 + 一般格式
+  var agodaBookingId=agodaField('Booking ID');
+  var agodaBookingRef=agodaField('Booking Reference No');
+  if(agodaBookingId&&/^[\d]{4,}$/.test(agodaBookingId)) r.ref=agodaBookingId;
+  else if(agodaBookingRef&&agodaBookingRef.length>=4) r.ref=agodaBookingRef;
+  else {
+    var rfm=t.match(/(?:booking\s*(?:id|no\.?|number|#)|confirmation\s*(?:no\.?|number|#|code)|agoda\s*(?:booking\s*id|id)|訂房(?:編號|號碼)|確認(?:號碼|編號|碼))[\s:：#]*([A-Z0-9\-]{4,20})/i);
+    if(rfm) r.ref=rfm[1].trim();
+  }
 
   // 飯店名稱 — 多策略解析
+  // 策略0: Agoda 三行格式 (Property:\n住宿名稱:\nHotel Name)
+  var agodaHN=agodaField('Property');
+  if(agodaHN&&agodaHN.length>=3&&!/^(?:住宿名稱|address|地址)/i.test(agodaHN)) r.name=agodaHN;
+
   function cleanHN(s){
     return (s||'').trim().replace(/\s+/g,' ')
       .replace(/\s*(?:address|地址|addr\.|tel\s*[:.]\s*\d|電話|phone\s*[:\d]|fax\s*:|zip\s*:|郵遞區號|check[\-\s]?in|入住).*/i,'')
@@ -1549,7 +1569,7 @@ function parseHotelConfirmation(text){
     return bad.indexOf(s.toLowerCase())<0;
   }
   var hotelLines=t.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
-  var hn='';
+  var hn=r.name||''; // 若 Agoda 策略已找到則跳過後續
 
   // 策略1: 標籤同行（Label: Value）
   var m1=t.match(/(?:(?:hotel|property|accommodation)\s*name|property\s*name|飯店名稱|旅館名稱)\s*[：:\s]+([^\n]{4,80})/i)
@@ -1624,7 +1644,7 @@ function parseHotelConfirmation(text){
     }
   }
 
-  if(hn) r.name=hn;
+  if(hn&&!r.name) r.name=hn;
 
   return r;
 }
