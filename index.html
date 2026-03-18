@@ -2852,6 +2852,24 @@ function parseTicket(txt){
   // 依日期排序（確保去程在前）
   res.segs.sort(function(a,b){return (a.dd+a.dt).localeCompare(b.dd+b.dt);});
 
+  // ── 重新判斷去回程方向（解決轉機多段問題）──
+  // 策略：找最大日期間隔作為去回程分界點；再用台灣機場覆蓋確認
+  if(res.segs.length>1){
+    var maxGap=0, gapIdx=res.segs.length-1;
+    for(var gi=0;gi<res.segs.length-1;gi++){
+      var d1=new Date(res.segs[gi].dd||'2000-01-01');
+      var d2=new Date(res.segs[gi+1].dd||'2000-01-01');
+      var gap=d2-d1;
+      if(gap>maxGap){maxGap=gap;gapIdx=gi+1;}
+    }
+    res.segs.forEach(function(s,i){s.dir=i<gapIdx?'out':'in';});
+    // 台灣機場規則覆蓋（最可靠）
+    res.segs.forEach(function(s){
+      if(isTW(s.dc)&&!isTW(s.ac)) s.dir='out';
+      if(!isTW(s.dc)&&isTW(s.ac)) s.dir='in';
+    });
+  }
+
   // 最終目的地：取最遠的去程抵達地
   if(res.segs.length>0){
     var outSegs=res.segs.filter(function(s){return s.dir==='out';});
