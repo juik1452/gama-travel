@@ -1,5 +1,5 @@
 // GAMA 差旅助手 Service Worker — 網路優先策略
-const CACHE_NAME = 'gama-travel-v7';
+const CACHE_NAME = 'gama-travel-v8';
 const CORE_ASSETS = [
   '/gama-travel/',
   '/gama-travel/index.html',
