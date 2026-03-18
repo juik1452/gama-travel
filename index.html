@@ -500,6 +500,8 @@ function checkAuth(){
   if(localStorage.getItem(AUTH_KEY)){
     document.getElementById('ls').style.display='none';
     updateAdminBtn();
+    renderDash();
+    autoReconnectSync();
   }
 }
 
@@ -514,7 +516,7 @@ function doLogin(){
     var ls=document.getElementById('ls');
     ls.style.transition='opacity .3s';
     ls.style.opacity='0';
-    setTimeout(function(){ls.style.display='none';updateAdminBtn();},300);
+    setTimeout(function(){ls.style.display='none';updateAdminBtn();renderDash();autoReconnectSync();},300);
   } else {
     err.style.display='block';
     document.getElementById('lp').value='';
@@ -1382,8 +1384,8 @@ function renderDash(){
     '</div>'+
     '<div style="display:flex;gap:6px;margin-bottom:10px">'+
       (isSynced
-        ? '<button class="bs bp" style="flex:1" onclick="_ghPull();_syncStatus('🔄 同步中…')">🔄 立即同步</button>'
-        : '<button class="bs bp" style="flex:1" onclick="fbConnect(document.getElementById('sync-key-inp').value)">🔗 連線同步</button>'
+        ? '<button class="bs bp" style="flex:1" onclick="_ghPull();_syncStatus(\'🔄 同步中…\')">🔄 立即同步</button>'
+        : '<button class="bs bp" style="flex:1" onclick="fbConnect(document.getElementById(\'sync-key-inp\').value)">🔗 連線同步</button>'
       )+
     '</div>'+
     '<div id="sync-status" style="font-size:11px;color:var(--muted);margin-bottom:10px">'+
