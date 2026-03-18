@@ -3332,7 +3332,7 @@ function rReport(trip){
           '</div>'+
           '<div>'+
             '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">開始時間 <span style="color:var(--muted);font-weight:400">（影響半日）</span></div>'+
-            '<input type="time" id="pd-st" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">'+
+            (function(){var o='<select id="pd-st" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;background:#fff"><option value="">未設定</option>';for(var h=0;h<24;h++)o+='<option value="'+(h<10?'0'+h:h)+':00">'+h+' 時</option>';return o+'</select>';})()+
           '</div>'+
           '<div>'+
             '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">結束日期</div>'+
@@ -3340,7 +3340,7 @@ function rReport(trip){
           '</div>'+
           '<div>'+
             '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">結束時間 <span style="color:var(--muted);font-weight:400">（影響半日）</span></div>'+
-            '<input type="time" id="pd-et" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none">'+
+            (function(){var o='<select id="pd-et" style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;background:#fff"><option value="">未設定</option>';for(var h=0;h<24;h++)o+='<option value="'+(h<10?'0'+h:h)+':00">'+h+' 時</option>';return o+'</select>';})()+
           '</div>'+
         '</div>'+
         '<div style="font-size:11px;color:var(--muted);background:#fff;border-radius:6px;padding:8px 10px;margin-bottom:8px;border:1px solid var(--border)">'+
