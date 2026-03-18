@@ -1536,16 +1536,95 @@ function parseHotelConfirmation(text){
   var rfm=t.match(/(?:booking\s*(?:id|no\.?|number|#)|confirmation\s*(?:no\.?|number|#|code)|agoda\s*(?:booking\s*id|id)|訂房(?:編號|號碼)|確認(?:號碼|編號|碼))[\\s:：#]*([A-Z0-9\-]{4,20})/i);
   if(rfm) r.ref=rfm[1].trim();
 
-  // 飯店名稱
-  var nmatch=t.match(/(?:hotel|property|accommodation|飯店|酒店|旅館|住宿(?:名稱|飯店)?)\s*[：:\s]\s*([^\n,，。]{4,60})/i)
-    ||t.match(/(?:你預訂了|您已預訂了|您的訂房|your stay at)\s+([^\n,，。]{4,60})/i);
-  if(nmatch){
-    var raw=nmatch[1].trim().replace(/\s+/g,' ')
-      .replace(/\s*(?:address|地址|addr\.|tel\s*[:.]\s*\d|電話|phone\s*:|fax\s*:|zip\s*:|郵遞區號|check[\-\s]?in|入住).*/i,'')
-      .replace(/[,，。:：].*/,'')
-      .trim();
-    if(raw.length>=3) r.name=raw;
+  // 飯店名稱 — 多策略解析
+  function cleanHN(s){
+    return (s||'').trim().replace(/\s+/g,' ')
+      .replace(/\s*(?:address|地址|addr\.|tel\s*[:.]\s*\d|電話|phone\s*[:\d]|fax\s*:|zip\s*:|郵遞區號|check[\-\s]?in|入住).*/i,'')
+      .replace(/[,，。:：\|].*/,'').trim();
   }
+  function isGoodHN(s){
+    if(!s||s.length<3||s.length>80) return false;
+    var bad=['hotel','property','accommodation','飯店','酒店','旅館','住宿名稱','住宿','尚未設定',
+             'booking','confirmation','agoda','expedia','guest','reservation'];
+    return bad.indexOf(s.toLowerCase())<0;
+  }
+  var hotelLines=t.split('\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+  var hn='';
+
+  // 策略1: 標籤同行（Label: Value）
+  var m1=t.match(/(?:(?:hotel|property|accommodation)\s*name|property\s*name|飯店名稱|旅館名稱)\s*[：:\s]+([^\n]{4,80})/i)
+    ||t.match(/(?:hotel|property|accommodation)\s*[：:]\s*([^\n]{4,80})/i)
+    ||t.match(/(?:飯店|酒店|旅館)\s*[：:]\s*([^\n]{4,80})/i);
+  if(m1){ var c1=cleanHN(m1[1]); if(isGoodHN(c1)) hn=c1; }
+
+  // 策略2: 標籤下一行（Label\nValue）
+  if(!hn){
+    var m2=t.match(/(?:hotel\s*name|property\s*name|property|hotel|accommodation|飯店|酒店|旅館|住宿(?:名稱)?)\s*\n\s*([^\n]{4,80})/i);
+    if(m2){ var c2=cleanHN(m2[1]); if(isGoodHN(c2)) hn=c2; }
+  }
+
+  // 策略3: "stay at / 預訂了 / 入住" 後的名稱
+  if(!hn){
+    var m3=t.match(/(?:your\s+stay\s+at|staying\s+at|reserved\s+at|you(?:'re| are)\s+staying\s+at|你(?:的)?預訂了?|您(?:的)?預訂了?|您已預訂了?|入住)\s*:?\s*([^\n,，。]{4,80})/i);
+    if(m3){ var c3=cleanHN(m3[1]); if(isGoodHN(c3)) hn=c3; }
+  }
+
+  // 策略4: Address: の直前の行が飯店名
+  if(!hn){
+    for(var li=1;li<hotelLines.length;li++){
+      if(/^(?:address|地址|addr\.?\s*:)/i.test(hotelLines[li])){
+        var prev=cleanHN(hotelLines[li-1]);
+        if(isGoodHN(prev)){ hn=prev; break; }
+      }
+    }
+  }
+
+  // 策略5: "Check-in:" の直前の行（Booking.com 形式）
+  if(!hn){
+    for(var li2=1;li2<hotelLines.length;li2++){
+      if(/^(?:check[\-\s]?in|入住日期)/i.test(hotelLines[li2])){
+        for(var back=li2-1;back>=Math.max(0,li2-4);back--){
+          var prev2=cleanHN(hotelLines[back]);
+          if(isGoodHN(prev2)&&prev2.length>=4){ hn=prev2; break; }
+        }
+        if(hn) break;
+      }
+    }
+  }
+
+  // 策略6: 前25行中包含常見飯店關鍵字的行
+  if(!hn){
+    var skipWords=/^(?:agoda|booking\.com|expedia|hotels\.com|trivago|trip\.com|airbnb|dear|hello|hi\b|booking confirmation|hotel confirmation|reservation|your booking|confirmation number|booking id|itinerary|page\s*\d|from:|to:|date:|sent:)/i;
+    for(var li3=0;li3<Math.min(hotelLines.length,25);li3++){
+      var ln=hotelLines[li3];
+      if(ln.length<4||ln.length>80) continue;
+      if(skipWords.test(ln)) continue;
+      if(/^\d/.test(ln)) continue;
+      if(/(?:hotel|inn|resort|suites?|palace|plaza|grand|royal|crown|garden|hilton|marriott|sheraton|hyatt|radisson|novotel|ibis|okura|keio|mitsui|相鉄|ホテル|飯店|酒店|旅館|民宿|lodge|hostel|guesthouse)/i.test(ln)){
+        var c6=cleanHN(ln);
+        if(isGoodHN(c6)){ hn=c6; break; }
+      }
+    }
+  }
+
+  // 策略7: 備援 — 前30行中，第一個「Title Case 或全大寫」且不像系統文字的行
+  if(!hn){
+    var skipW2=/^(?:agoda|booking|expedia|hotels\.com|trivago|trip|airbnb|dear|hello|page|from|to|date|sent|subject|re:|fw:|fwd:|tel|fax|email|phone|www\.|http|select|room|rate|price|total|amount|tax|fee|bed|floor|night|check)/i;
+    for(var li4=0;li4<Math.min(hotelLines.length,30);li4++){
+      var ln4=hotelLines[li4];
+      if(ln4.length<5||ln4.length>70) continue;
+      if(skipW2.test(ln4)) continue;
+      if(/^\d/.test(ln4)||/^[a-z]/.test(ln4)) continue; // 小寫或數字開頭跳過
+      // 不含純符號行
+      if(/^[\W\s]+$/.test(ln4)) continue;
+      // 需含至少一個英文字母或中文字
+      if(!/[A-Za-z\u4e00-\u9fff]/.test(ln4)) continue;
+      var c7=cleanHN(ln4);
+      if(isGoodHN(c7)&&c7.length>=4){ hn=c7; break; }
+    }
+  }
+
+  if(hn) r.name=hn;
 
   return r;
 }
@@ -1593,7 +1672,7 @@ function _showHotelConfirmPreview(tripId,parsed,rawText){
       '</div>';
   } else {
     var rows=[
-      {label:'飯店名稱',val:parsed.name},
+      {label:'飯店名稱',val:parsed.name||'（未能自動辨識，請儲存後手動輸入）'},
       {label:'入住日期',val:parsed.cin},
       {label:'退房日期',val:parsed.cout},
       {label:'住宿晚數',val:parsed.nights?(parsed.nights+' 晚'):''},
