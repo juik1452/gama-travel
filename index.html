@@ -1701,11 +1701,12 @@ function openTrip(id){
   showDetail(trip,false);
 }
 function showDetail(trip,isDraft){
-  document.getElementById('dtitle').textContent=trip.destination;
+  var _dLabel=_toEnDest(_tripDest(trip));
+  document.getElementById('dtitle').textContent=_dLabel;
   var out=trip.segs.find(function(s){return s.dir==='out';});
   var inb=[].concat(trip.segs).reverse().find(function(s){return s.dir==='in';});
   document.getElementById('dhero').innerHTML=
-    '<div style="font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px">'+icn('plane',22,'rgba(255,255,255,.9)')+' '+trip.destination+'</div>'+
+    '<div style="font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px">'+icn('plane',22,'rgba(255,255,255,.9)')+' '+_dLabel+'</div>'+
     '<div class="sub">'+(trip.event||'')+'</div>'+
     '<div class="meta">'+
     (out?'<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('plane',12,'rgba(255,255,255,.8)')+' 出發 '+out.dd+'</div>':'')+
@@ -3473,8 +3474,9 @@ function refreshDetail(trip){
   var inb=[].concat(trip.segs).reverse().find(function(s){return s.dir==='in';});
   var dhero=document.getElementById('dhero');
   if(dhero){
+    var _dLabel2=_toEnDest(_tripDest(trip));
     dhero.innerHTML=
-      '<div style="font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px">'+icn('plane',22,'rgba(255,255,255,.9)')+' '+trip.destination+'</div>'+
+      '<div style="font-size:22px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px">'+icn('plane',22,'rgba(255,255,255,.9)')+' '+_dLabel2+'</div>'+
       '<div class="sub">'+(trip.event||'')+'</div>'+
       '<div class="meta">'+
       (out?'<div class="mi" style="display:flex;align-items:center;gap:4px">'+icn('plane',12,'rgba(255,255,255,.8)')+' 出發 '+out.dd+'</div>':'')+
