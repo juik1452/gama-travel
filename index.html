@@ -2631,7 +2631,7 @@ function rHotel(trip){
   html+='<div class="hc">'+
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
       '<input id="hotel-name-inp" type="text" value="'+escHtml(hotelNameOk?h.name:'')+'" placeholder="請輸入飯店名稱" '+
-        'style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:15px;font-weight:700;font-family:inherit;color:var(--text);outline:none">'+
+        'style="flex:1;border:1.5px solid rgba(255,255,255,0.25);border-radius:8px;padding:8px 12px;font-size:15px;font-weight:700;font-family:inherit;color:#fff;background:rgba(255,255,255,0.1);outline:none">'+
       '<button onclick="saveHotelName(\''+trip.id+'\')" '+
         'style="flex-shrink:0;padding:8px 14px;border-radius:8px;background:var(--pri);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">儲存</button>'+
     '</div>'+
