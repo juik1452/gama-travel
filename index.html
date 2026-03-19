@@ -1544,8 +1544,8 @@ function autoReconnectSync(){
   _hookSync();
   // Firebase 即時同步（優先）
   if(_fbUser&&_fbDb){_startFsSync();return;}
-  // Firebase SDK 已載入：等待 onAuthStateChanged，不啟動 Gist 同步
-  if(typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG.apiKey) return;
+  // Firebase 模式：等待 auth 載入，不啟動 Gist 同步
+  if(typeof _USE_FIREBASE!=='undefined'&&_USE_FIREBASE) return;
   // Fallback: GitHub Gist 同步（僅在無 Firebase 時使用）
   var saved=getSyncToken();
   var gistId=getSyncGistId();
@@ -4498,6 +4498,7 @@ function setLoad(on){document.getElementById('loading').classList[on?'add':'remo
 // ═══════════════════════════════════════
 // BOOT
 // ═══════════════════════════════════════
+var _USE_FIREBASE=true; // Firebase 同步模式，禁止 Gist 同步
 renderDash();
 autoReconnectSync();
 
