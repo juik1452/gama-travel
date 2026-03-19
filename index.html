@@ -2586,6 +2586,100 @@ function autoTranslateAddr(pName,chAddr,tripId){
 }
 
 // 從航段反推目的地（舊資料 destination 為空時的 fallback）
+var _ZH_EN={
+  // 國家
+  '美國':'USA','日本':'Japan','韓國':'South Korea','香港':'Hong Kong','澳門':'Macau',
+  '新加坡':'Singapore','泰國':'Thailand','馬來西亞':'Malaysia','英國':'UK',
+  '法國':'France','德國':'Germany','荷蘭':'Netherlands','澳洲':'Australia',
+  '紐西蘭':'New Zealand','加拿大':'Canada','阿聯酋':'UAE','卡達':'Qatar',
+  '奧地利':'Austria','瑞士':'Switzerland','西班牙':'Spain','義大利':'Italy',
+  '比利時':'Belgium','丹麥':'Denmark','瑞典':'Sweden','芬蘭':'Finland',
+  '挪威':'Norway','葡萄牙':'Portugal','希臘':'Greece','菲律賓':'Philippines',
+  '越南':'Vietnam','印尼':'Indonesia','緬甸':'Myanmar','印度':'India',
+  '斯里蘭卡':'Sri Lanka','尼泊爾':'Nepal','中國大陸':'China','土耳其':'Turkey',
+  '台灣':'Taiwan','巴西':'Brazil','墨西哥':'Mexico','阿根廷':'Argentina',
+  '智利':'Chile','哥倫比亞':'Colombia','秘魯':'Peru','巴拿馬':'Panama',
+  '南非':'South Africa','肯亞':'Kenya','埃及':'Egypt','奈及利亞':'Nigeria',
+  // 城市
+  '曼谷':'Bangkok','東京':'Tokyo','大阪':'Osaka','名古屋':'Nagoya',
+  '福岡':'Fukuoka','札幌':'Sapporo','那霸':'Naha','京都':'Kyoto',
+  '首爾':'Seoul','釜山':'Busan','仁川':'Incheon',
+  '吉隆坡':'Kuala Lumpur','倫敦':'London','巴黎':'Paris',
+  '法蘭克福':'Frankfurt','慕尼黑':'Munich','柏林':'Berlin','漢堡':'Hamburg',
+  '阿姆斯特丹':'Amsterdam','羅馬':'Rome','米蘭':'Milan','威尼斯':'Venice',
+  '巴塞隆納':'Barcelona','馬德里':'Madrid','維也納':'Vienna',
+  '蘇黎世':'Zurich','日內瓦':'Geneva','布魯塞爾':'Brussels','哥本哈根':'Copenhagen',
+  '斯德哥爾摩':'Stockholm','赫爾辛基':'Helsinki','奧斯陸':'Oslo','里斯本':'Lisbon',
+  '雅典':'Athens','伊斯坦堡':'Istanbul','杜拜':'Dubai','阿布達比':'Abu Dhabi','多哈':'Doha',
+  '雪梨':'Sydney','墨爾本':'Melbourne','布里斯本':'Brisbane','柏斯':'Perth',
+  '奧克蘭':'Auckland','多倫多':'Toronto','溫哥華':'Vancouver','蒙特婁':'Montreal',
+  '紐約':'New York','洛杉磯':'Los Angeles','舊金山':'San Francisco',
+  '西雅圖':'Seattle','拉斯維加斯':'Las Vegas','芝加哥':'Chicago',
+  '上海':'Shanghai','北京':'Beijing','廣州':'Guangzhou','深圳':'Shenzhen',
+  '成都':'Chengdu','重慶':'Chongqing','武漢':'Wuhan','西安':'Xi\'an',
+  '胡志明市':'Ho Chi Minh City','河內':'Hanoi','峴港':'Da Nang',
+  '雅加達':'Jakarta','峇里島':'Bali','泗水':'Surabaya',
+  '馬尼拉':'Manila','宿霧':'Cebu','仰光':'Yangon','金邊':'Phnom Penh',
+  '暹粒':'Siem Reap','萬象':'Vientiane','孟買':'Mumbai','德里':'Delhi',
+  '班加羅爾':'Bangalore','喀拉蚩':'Karachi','可倫坡':'Colombo',
+  '內羅畢':'Nairobi','約翰尼斯堡':'Johannesburg','開羅':'Cairo',
+  '聖保羅':'São Paulo','里約':'Rio de Janeiro','布宜諾斯艾利斯':'Buenos Aires',
+  '墨西哥城':'Mexico City','聖地牙哥':'Santiago','利馬':'Lima'
+};
+// 機場代碼 → 英文城市/國家
+var _AC_EN={
+  BKK:'Bangkok',DMK:'Bangkok',HKT:'Phuket',CNX:'Chiang Mai',USM:'Koh Samui',
+  NRT:'Tokyo',HND:'Tokyo',KIX:'Osaka',NGO:'Nagoya',CTS:'Sapporo',OKA:'Naha',FUK:'Fukuoka',
+  ICN:'Seoul',GMP:'Seoul',PUS:'Busan',
+  HKG:'Hong Kong',MFM:'Macau',
+  SIN:'Singapore',
+  KUL:'Kuala Lumpur',PEN:'Penang',BKI:'Kota Kinabalu',LGK:'Langkawi',
+  SGN:'Ho Chi Minh City',HAN:'Hanoi',DAD:'Da Nang',
+  MNL:'Manila',CEB:'Cebu',
+  CGK:'Jakarta',DPS:'Bali',SUB:'Surabaya',
+  RGN:'Yangon',PNH:'Phnom Penh',REP:'Siem Reap',VTE:'Vientiane',
+  LHR:'London',LGW:'London',STN:'London',MAN:'Manchester',
+  CDG:'Paris',ORY:'Paris',
+  FRA:'Frankfurt',MUC:'Munich',DUS:'Dusseldorf',BER:'Berlin',
+  AMS:'Amsterdam',
+  FCO:'Rome',MXP:'Milan',VCE:'Venice',NAP:'Naples',
+  BCN:'Barcelona',MAD:'Madrid',
+  VIE:'Vienna',ZRH:'Zurich',GVA:'Geneva',BSL:'Basel',
+  BRU:'Brussels',CPH:'Copenhagen',ARN:'Stockholm',HEL:'Helsinki',OSL:'Oslo',LIS:'Lisbon',ATH:'Athens',
+  IST:'Istanbul',SAW:'Istanbul',
+  DXB:'Dubai',AUH:'Abu Dhabi',DOH:'Doha',
+  SYD:'Sydney',MEL:'Melbourne',BNE:'Brisbane',PER:'Perth',CBR:'Canberra',ADL:'Adelaide',
+  AKL:'Auckland',CHC:'Christchurch',WLG:'Wellington',
+  YYZ:'Toronto',YVR:'Vancouver',YUL:'Montreal',YYC:'Calgary',
+  JFK:'New York',LGA:'New York',EWR:'New York',LAX:'Los Angeles',
+  SFO:'San Francisco',SEA:'Seattle',ORD:'Chicago',LAS:'Las Vegas',HNL:'Honolulu',
+  PEK:'Beijing',PKX:'Beijing',PVG:'Shanghai',SHA:'Shanghai',
+  CAN:'Guangzhou',SZX:'Shenzhen',CTU:'Chengdu',WUH:'Wuhan',XIY:"Xi'an",CKG:'Chongqing',
+  DEL:'Delhi',BOM:'Mumbai',BLR:'Bangalore',MAA:'Chennai',CCU:'Kolkata',
+  CMB:'Colombo',KTM:'Kathmandu',
+  CAI:'Cairo',NBO:'Nairobi',JNB:'Johannesburg',LOS:'Lagos',ADD:'Addis Ababa',
+  GRU:'São Paulo',GIG:'Rio de Janeiro',EZE:'Buenos Aires',SCL:'Santiago',
+  BOG:'Bogotá',LIM:'Lima',MEX:'Mexico City',PTY:'Panama City',
+  TPE:'Taipei',RMQ:'Taichung',KHH:'Kaohsiung'
+};
+function _toEnDest(d){
+  if(!d) return d;
+  // 直接英文，不含中文 → 先試機場代碼對照
+  if(!/[\u4e00-\u9fa5]/.test(d)){
+    var up=d.toUpperCase().trim();
+    if(_AC_EN[up]) return _AC_EN[up];
+    if(_ZH_EN[d]) return _ZH_EN[d];
+    return d;  // 已是英文
+  }
+  // 中文完全匹配
+  if(_ZH_EN[d]) return _ZH_EN[d];
+  // 中文部分匹配
+  var keys=Object.keys(_ZH_EN);
+  for(var i=0;i<keys.length;i++){
+    if(d.indexOf(keys[i])>=0) return _ZH_EN[keys[i]];
+  }
+  return d;
+}
 function _tripDest(trip){
   var d=trip.destination||trip.country||'';
   if(!d){
@@ -2593,7 +2687,7 @@ function _tripDest(trip){
     var last=out[out.length-1];
     if(last) d=guessCountry(last.ac)||(last.ac?last.ac:'');
   }
-  return d||'—';
+  return _toEnDest(d)||'—';
 }
 function saveHotelName(tripId){
   var val=(document.getElementById('hotel-name-inp').value||'').trim();
