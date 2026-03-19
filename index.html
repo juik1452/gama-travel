@@ -4542,13 +4542,16 @@ var FIREBASE_CONFIG={
 };
 var _fbApp=null,_fbAuth=null,_fbDb=null,_fbUser=null,_fsUnsubscribe=null;
 
-function _fsDoc(){return _fbDb.collection('companies').doc('gama');}
+function _fsDoc(){return _fbDb.collection('companies').doc('gama').collection('sync').doc('data');}
 
 function _fsPush(){
   if(!_fbDb||!_fbUser) return;
   var trips=MEM||lsGet('gama_trips')||[];
-  _fsDoc().set({trips:trips,updatedAt:Date.now()},{merge:false}).catch(function(e){
+  _fsDoc().set({trips:trips,updatedAt:Date.now()}).then(function(){
+    _syncStatus('✅ Firebase 即時同步中 · 所有裝置自動更新');
+  }).catch(function(e){
     console.warn('Firestore push error:',e);
+    _syncStatus('⚠️ 同步失敗：'+e.code);
   });
 }
 
