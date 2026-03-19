@@ -1544,7 +1544,9 @@ function autoReconnectSync(){
   _hookSync();
   // Firebase 即時同步（優先）
   if(_fbUser&&_fbDb){_startFsSync();return;}
-  // Fallback: GitHub Gist 同步
+  // Firebase SDK 已載入：等待 onAuthStateChanged，不啟動 Gist 同步
+  if(typeof firebase!=='undefined'&&typeof FIREBASE_CONFIG!=='undefined'&&FIREBASE_CONFIG.apiKey) return;
+  // Fallback: GitHub Gist 同步（僅在無 Firebase 時使用）
   var saved=getSyncToken();
   var gistId=getSyncGistId();
   if(saved&&gistId){
@@ -4565,8 +4567,8 @@ function _fsPush(){
 
 function _fsPull(data){
   if(!data||!data.trips) return;
-  // 是自己推的資料就跳過（本機已是最新，不需要從 Firestore 拉回）
-  if(data.deviceId&&data.deviceId===_deviceId) return;
+  // 沒有 deviceId（舊格式）或是自己推的資料 → 跳過，本機永遠是最新
+  if(!data.deviceId||data.deviceId===_deviceId) return;
   // 只從其他裝置接收本機沒有的行程
   var remote=data.trips;
   var local=lsGet('gama_trips')||[];
@@ -4584,6 +4586,9 @@ var _fsSyncing=false;
 function _startFsSync(){
   if(!_fbDb||!_fbUser||_fsSyncing) return;
   _fsSyncing=true;
+  // Firebase 接管：停止 GitHub Gist 輪詢，避免舊資料覆蓋本機
+  if(_syncTimer){clearInterval(_syncTimer);_syncTimer=null;}
+  _ghToken=''; _ghGistId='';
   if(_fsUnsubscribe){_fsUnsubscribe();_fsUnsubscribe=null;}
   _fsUnsubscribe=_fsDoc().onSnapshot(function(doc){
     if(!doc.exists||doc.metadata.hasPendingWrites) return;
