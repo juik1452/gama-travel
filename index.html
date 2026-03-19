@@ -4041,25 +4041,68 @@ function shareToLine(txt){
 }
 
 // ── 差旅費地區費率 ──
-function _allowanceRate(dest){
+function _allowanceRate(dest, airportCode){
   var d=(dest||'').toLowerCase();
-  var dev70=['中國','大陸','北京','上海','廣州','深圳','成都','武漢','杭州','南京','重慶','西安',
-    'china','beijing','shanghai','guangzhou','shenzhen','chengdu',
-    '香港','hong kong','hk',
-    '澳門','macao','macau',
-    '泰國','thailand','bangkok','曼谷',
-    '新加坡','singapore',
-    '馬來西亞','malaysia','kuala lumpur','吉隆坡',
-    '越南','vietnam','hanoi','河內','ho chi minh','胡志明',
-    '菲律賓','philippines','manila','馬尼拉',
-    '印尼','indonesia','jakarta','雅加達','峇里','bali',
-    '緬甸','myanmar','yangon','仰光',
-    '柬埔寨','cambodia','phnom penh','金邊',
-    '寮國','laos','汶萊','brunei',
-    '非洲','africa','cairo','開羅','奈洛比','nairobi','johannesburg','約翰尼斯堡',
-    '中南美洲','南美','巴西','brazil','阿根廷','argentina','智利','chile',
-    '哥倫比亞','colombia','秘魯','peru','墨西哥','mexico','巴拿馬','panama'];
-  for(var i=0;i<dev70.length;i++){if(d.indexOf(dev70[i])>=0)return 70;}
+  var a=(airportCode||'').toLowerCase();
+  var dev70=[
+    // ── 中國大陸（城市名 + 機場代碼）
+    '中國','大陸','北京','上海','廣州','深圳','成都','武漢','杭州','南京','重慶','西安','廈門','瀋陽','大連','天津','長沙','昆明','南寧','青島',
+    'china','beijing','shanghai','guangzhou','shenzhen','chengdu','hangzhou','nanjing','wuhan','xiamen',
+    'pek','pkx','pvg','sha','can','szx','ctu','hgh','wuh','nkg','ckg','xiy','xmn','csx','kmg','nng','tsn','she','dlc','tna','cgo','tao',
+    // ── 香港
+    '香港','hong kong','hkg',
+    // ── 澳門
+    '澳門','macao','macau','mfm',
+    // ── 泰國
+    '泰國','thailand','bangkok','曼谷','普吉','清邁','蘇梅',
+    'bkk','dmk','hkt','cnx','usm',
+    // ── 新加坡
+    '新加坡','singapore','sin',
+    // ── 馬來西亞
+    '馬來西亞','malaysia','kuala lumpur','吉隆坡','亞庇','檳城',
+    'kul','pen','bki','lgk',
+    // ── 越南
+    '越南','vietnam','hanoi','河內','ho chi minh','胡志明','峴港',
+    'sgn','han','dad','cxr',
+    // ── 菲律賓
+    '菲律賓','philippines','manila','馬尼拉','宿霧',
+    'mnl','ceb','dvo',
+    // ── 印尼
+    '印尼','indonesia','jakarta','雅加達','峇里','bali','泗水',
+    'cgk','dps','sub','upg','kno',
+    // ── 緬甸
+    '緬甸','myanmar','yangon','仰光','rgn','mdl',
+    // ── 柬埔寨
+    '柬埔寨','cambodia','phnom penh','金邊','暹粒','pnh','rep',
+    // ── 寮國
+    '寮國','laos','vte',
+    // ── 汶萊
+    '汶萊','brunei','bwn',
+    // ── 非洲
+    '非洲','africa',
+    '開羅','cairo','cai',
+    '奈洛比','nairobi','nbo',
+    '約翰尼斯堡','johannesburg','jnb',
+    '拉哥斯','lagos','los',
+    '阿迪斯阿貝巴','addis ababa','add',
+    '達卡','dakar','dkr',
+    '卡薩布蘭卡','casablanca','cmn',
+    '達累斯薩拉姆','dar es salaam','dar',
+    // ── 中南美洲
+    '中南美洲','南美',
+    '巴西','brazil','gru','gig',
+    '阿根廷','argentina','eze',
+    '智利','chile','scl',
+    '哥倫比亞','colombia','bog',
+    '秘魯','peru','lim',
+    '墨西哥','mexico','mex',
+    '巴拿馬','panama','pty',
+    '厄瓜多','ecuador','uio',
+    '委內瑞拉','venezuela','ccs'
+  ];
+  for(var i=0;i<dev70.length;i++){
+    if(d.indexOf(dev70[i])>=0||a===dev70[i]) return 70;
+  }
   return 90;
 }
 function _rateLabel(rate){
@@ -4153,8 +4196,10 @@ function buildReportText(trip){
   var inb=segs.filter(function(s){return s.dir==='in';});
   var firstOut=out[0], lastInb=inb[inb.length-1];
 
-  // 差旅費計算
-  var rate=_allowanceRate(trip.destination);
+  // 差旅費計算（同時用目的地名稱 + 到達機場代碼判斷費率）
+  var _lastOut=out[out.length-1];
+  var _destAirport=_lastOut?(_lastOut.ac||''):'';
+  var rate=_allowanceRate(trip.destination, _destAirport);
   var deptDate=firstOut?firstOut.dd:'';
   var deptTime=firstOut?firstOut.dt:'08:00';
   var retDate=lastInb?(lastInb.ad&&lastInb.ad!==lastInb.dd?lastInb.ad:lastInb.dd):'';
