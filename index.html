@@ -4583,13 +4583,20 @@ function _startFsSync(){
 }
 
 function signInWithGoogle(){
-  if(!_fbAuth){toast('Firebase 尚未初始化');return;}
+  if(typeof firebase==='undefined'){toast('⚠️ Firebase SDK 未載入，請確認網路連線');return;}
+  if(!_fbAuth){
+    // 嘗試重新初始化
+    try{_initFirebase();}catch(e){}
+    if(!_fbAuth){toast('⚠️ Firebase 初始化失敗，請重新整理頁面');return;}
+  }
   var provider=new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt:'select_account'});
-  // 改用 redirect（比 popup 更穩定，避免被瀏覽器阻擋）
-  _fbAuth.signInWithRedirect(provider).catch(function(err){
-    toast('Google 登入失敗：'+err.message);
-  });
+  toast('🔄 跳轉至 Google 登入...');
+  setTimeout(function(){
+    _fbAuth.signInWithRedirect(provider).catch(function(err){
+      toast('Google 登入失敗：'+err.code+' '+err.message);
+    });
+  }, 500);
 }
 
 function _fbLoginSuccess(user){
@@ -4621,7 +4628,12 @@ function _initFirebase(){
   _fbAuth.getRedirectResult().then(function(result){
     if(result&&result.user) _fbLoginSuccess(result.user);
   }).catch(function(err){
-    if(err.code!=='auth/no-auth-event') console.warn('Redirect auth error:',err.message);
+    if(err.code==='auth/unauthorized-domain'){
+      toast('⚠️ 此網域未授權，請聯絡管理員將 '+location.hostname+' 加入 Firebase 授權網域');
+    } else if(err.code!=='auth/no-auth-event'&&err.code!=='auth/null-user'){
+      toast('登入錯誤：'+err.code);
+      console.warn('Redirect result error:',err);
+    }
   });
   // 監聽登入狀態（含已登入的 session）
   _fbAuth.onAuthStateChanged(function(user){
