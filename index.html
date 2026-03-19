@@ -4584,19 +4584,22 @@ function _startFsSync(){
 
 function signInWithGoogle(){
   if(typeof firebase==='undefined'){toast('⚠️ Firebase SDK 未載入，請確認網路連線');return;}
-  if(!_fbAuth){
-    // 嘗試重新初始化
-    try{_initFirebase();}catch(e){}
-    if(!_fbAuth){toast('⚠️ Firebase 初始化失敗，請重新整理頁面');return;}
-  }
+  if(!_fbAuth){try{_initFirebase();}catch(e){} if(!_fbAuth){toast('⚠️ 請重新整理頁面後再試');return;}}
   var provider=new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt:'select_account'});
-  toast('🔄 跳轉至 Google 登入...');
-  setTimeout(function(){
-    _fbAuth.signInWithRedirect(provider).catch(function(err){
-      toast('Google 登入失敗：'+err.code+' '+err.message);
+  _fbAuth.signInWithPopup(provider)
+    .then(function(result){
+      if(result&&result.user) _fbLoginSuccess(result.user);
+    })
+    .catch(function(err){
+      var msg={
+        'auth/popup-blocked':'彈出視窗被封鎖，請允許此網站顯示彈出視窗後再試',
+        'auth/popup-closed-by-user':'登入視窗已關閉，請重新點擊登入',
+        'auth/unauthorized-domain':'此網域未授權，請聯絡管理員',
+        'auth/cancelled-popup-request':'已取消，請重新點擊登入'
+      };
+      toast('⚠️ '+(msg[err.code]||err.code+': '+err.message));
     });
-  }, 500);
 }
 
 function _fbLoginSuccess(user){
@@ -4624,18 +4627,7 @@ function _initFirebase(){
   _fbApp=firebase.app();
   _fbAuth=firebase.auth();
   _fbDb=firebase.firestore();
-  // 處理 redirect 登入回傳結果
-  _fbAuth.getRedirectResult().then(function(result){
-    if(result&&result.user) _fbLoginSuccess(result.user);
-  }).catch(function(err){
-    if(err.code==='auth/unauthorized-domain'){
-      toast('⚠️ 此網域未授權，請聯絡管理員將 '+location.hostname+' 加入 Firebase 授權網域');
-    } else if(err.code!=='auth/no-auth-event'&&err.code!=='auth/null-user'){
-      toast('登入錯誤：'+err.code);
-      console.warn('Redirect result error:',err);
-    }
-  });
-  // 監聽登入狀態（含已登入的 session）
+  // 監聽登入狀態（含已登入的 session 自動恢復）
   _fbAuth.onAuthStateChanged(function(user){
     if(user) _fbLoginSuccess(user);
   });
