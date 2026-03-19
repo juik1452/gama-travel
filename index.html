@@ -4589,35 +4589,41 @@ function signInWithGoogle(){
   provider.setCustomParameters({prompt:'select_account'});
   _fbAuth.signInWithPopup(provider)
     .then(function(result){
+      // onAuthStateChanged 也會觸發，這裡做備援
       if(result&&result.user) _fbLoginSuccess(result.user);
     })
     .catch(function(err){
       var msg={
-        'auth/popup-blocked':'彈出視窗被封鎖，請允許此網站顯示彈出視窗後再試',
+        'auth/popup-blocked':'彈出視窗被封鎖，請在瀏覽器允許彈出視窗後再試',
         'auth/popup-closed-by-user':'登入視窗已關閉，請重新點擊登入',
-        'auth/unauthorized-domain':'此網域未授權，請聯絡管理員',
-        'auth/cancelled-popup-request':'已取消，請重新點擊登入'
+        'auth/unauthorized-domain':'此網域未授權（'+location.hostname+'）',
+        'auth/cancelled-popup-request':'已取消，請重新點擊登入',
+        'auth/internal-error':'內部錯誤，請重新整理後再試'
       };
-      toast('⚠️ '+(msg[err.code]||err.code+': '+err.message));
+      toast('⚠️ '+(msg[err.code]||err.code+' '+err.message));
     });
 }
 
 function _fbLoginSuccess(user){
+  if(!user) return;
   _fbUser=user;
   localStorage.setItem(AUTH_KEY,user.displayName||user.email);
   localStorage.setItem(AUTH_ROLE_KEY,'admin');
+  toast('✅ Google 登入成功：'+user.email);
   var ls=document.getElementById('ls');
-  if(ls&&ls.style.display!=='none'){
+  // 用 computedStyle 確保偵測到實際顯示狀態
+  var lsVisible=ls&&window.getComputedStyle(ls).display!=='none';
+  if(lsVisible){
     ls.style.transition='opacity .3s';ls.style.opacity='0';
     setTimeout(function(){
       ls.style.display='none';
       updateAdminBtn();
-      renderDash();
-      _startFsSync();
+      try{renderDash();}catch(e){console.error('renderDash:',e);}
+      try{_startFsSync();}catch(e){console.error('startFsSync:',e);}
     },300);
   } else {
-    _startFsSync();
-    renderDash();
+    try{_startFsSync();}catch(e){}
+    try{renderDash();}catch(e){}
   }
 }
 
@@ -4629,7 +4635,9 @@ function _initFirebase(){
   _fbDb=firebase.firestore();
   // 監聽登入狀態（含已登入的 session 自動恢復）
   _fbAuth.onAuthStateChanged(function(user){
-    if(user) _fbLoginSuccess(user);
+    if(user){
+      _fbLoginSuccess(user);
+    }
   });
 }
 
