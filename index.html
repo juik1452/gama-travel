@@ -1168,10 +1168,24 @@ function fbConnect(token){
       _ghPull();
       _ghPush();
       _startPolling();
-      _syncStatus('\u2705 連線中 — 每 30 秒自動同步');
+      _syncStatus('✅ 連線中 — 每 30 秒自動同步');
       renderDash();
     } else {
-      _ghCreateGist();
+      // 先搜尋已有的 gama-travel.json Gist，避免在新裝置上建立重複的空 Gist
+      _ghReq('GET','/gists').then(function(gists){
+        var existing=(gists||[]).find(function(g){return g.files&&g.files['gama-travel.json'];});
+        if(existing){
+          _ghGistId=existing.id;
+          setSyncGistId(existing.id);
+          _ghPull();
+          _startPolling();
+          _syncStatus('✅ 連線中 — 每 30 秒自動同步');
+          renderDash();
+          toast('✅ 已載入現有同步資料！');
+        } else {
+          _ghCreateGist();
+        }
+      }).catch(function(){ _ghCreateGist(); });
     }
   }).catch(function(e){
     _syncStatus('\u274c Token 無效：'+e.message);
