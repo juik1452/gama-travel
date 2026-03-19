@@ -4542,12 +4542,20 @@ var FIREBASE_CONFIG={
 };
 var _fbApp=null,_fbAuth=null,_fbDb=null,_fbUser=null,_fsUnsubscribe=null;
 
+// 每台裝置唯一 ID：push 時帶上 deviceId，pull 時跳過自己推的資料
+var _deviceId=(function(){
+  var k='gama_device_id';
+  var id=localStorage.getItem(k);
+  if(!id){id='dev_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);localStorage.setItem(k,id);}
+  return id;
+})();
+
 function _fsDoc(){return _fbDb.collection('companies').doc('gama').collection('sync').doc('data');}
 
 function _fsPush(){
   if(!_fbDb||!_fbUser) return;
   var trips=MEM||lsGet('gama_trips')||[];
-  _fsDoc().set({trips:trips,updatedAt:Date.now()}).then(function(){
+  _fsDoc().set({trips:trips,updatedAt:Date.now(),deviceId:_deviceId}).then(function(){
     _syncStatus('✅ Firebase 即時同步中 · 所有裝置自動更新');
   }).catch(function(e){
     console.warn('Firestore push error:',e);
@@ -4556,14 +4564,15 @@ function _fsPush(){
 }
 
 function _fsPull(data){
-  // 只從其他裝置接收新增的行程，不覆蓋本機已有的資料
   if(!data||!data.trips) return;
+  // 是自己推的資料就跳過（本機已是最新，不需要從 Firestore 拉回）
+  if(data.deviceId&&data.deviceId===_deviceId) return;
+  // 只從其他裝置接收本機沒有的行程
   var remote=data.trips;
   var local=lsGet('gama_trips')||[];
   var localIds=new Set(local.map(function(t){return t.id;}));
-  // 只加入本機沒有的遠端行程（新裝置新增的資料）
   var newFromRemote=remote.filter(function(t){return !localIds.has(t.id);});
-  if(newFromRemote.length===0) return; // 沒有新資料，不需要更新
+  if(newFromRemote.length===0) return;
   var merged=local.concat(newFromRemote);
   MEM=null;
   lsSet('gama_trips',merged);
@@ -4575,21 +4584,16 @@ var _fsSyncing=false;
 function _startFsSync(){
   if(!_fbDb||!_fbUser||_fsSyncing) return;
   _fsSyncing=true;
-  if(_fsUnsubscribe) _fsUnsubscribe();
-  // 先把本機資料推上去（保留本機所有刪除和修改）
+  if(_fsUnsubscribe){_fsUnsubscribe();_fsUnsubscribe=null;}
+  _fsUnsubscribe=_fsDoc().onSnapshot(function(doc){
+    if(!doc.exists||doc.metadata.hasPendingWrites) return;
+    _fsPull(doc.data());
+    _syncStatus('\u2705 Firebase 即時同步中 · 所有裝置自動更新');
+  },function(err){
+    _syncStatus('\u26a0\ufe0f 同步錯誤：'+err.message);
+  });
+  // 推送本機資料讓其他裝置能同步（自己不受影響）
   _fsPush();
-  // 等推完再開始監聽（500ms 後確保 push 已送出）
-  setTimeout(function(){
-    _fsUnsubscribe=_fsDoc().onSnapshot(function(doc){
-      if(!doc.exists||doc.metadata.hasPendingWrites) return;
-      // 只同步其他裝置新增的資料
-      _fsPull(doc.data());
-      _syncStatus('\u2705 Firebase 即時同步中 · 所有裝置自動更新');
-    },function(err){
-      _syncStatus('\u26a0\ufe0f 同步錯誤：'+err.message);
-    });
-    _fsSyncing=false;
-  },500);
 }
 
 function signInWithGoogle(){
