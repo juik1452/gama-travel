@@ -1137,9 +1137,10 @@ function _ghCreateGist(){
   }).then(function(gist){
     _ghGistId=gist.id;
     setSyncGistId(gist.id);
-    _syncStatus('\u2705 已建立同步，Gist ID：'+gist.id.slice(0,8)+'…');
+    _syncStatus('✅ 已建立同步，Gist ID：'+gist.id.slice(0,8)+'…');
     _startPolling();
-    toast('\u2705 同步已啟動！其他裝置輸入相同 Token 即可同步');
+    renderDash();
+    toast('✅ 同步已啟動！其他裝置輸入相同 Token 即可同步');
   }).catch(function(e){
     _syncStatus('\u274c 建立失敗：'+e.message);
     toast('\u274c '+e.message);
