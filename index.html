@@ -74,7 +74,8 @@ a{color:inherit;text-decoration:none}
 .tc{background:rgba(255,255,255,0.14);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border:1px solid rgba(255,255,255,0.22);border-radius:var(--r);
   box-shadow:var(--sh);padding:18px;margin-bottom:14px;
-  transition:transform .15s,box-shadow .15s}
+  transition:transform .15s,box-shadow .15s;cursor:pointer;user-select:none}
+.tc:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(0,0,0,0.22)}
 .tc:active{transform:translateY(1px);box-shadow:0 2px 10px rgba(0,0,0,0.12)}
 .tc-hd{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
 .tc-flag{font-size:28px;line-height:1;width:48px;height:48px;
@@ -349,17 +350,24 @@ a{color:inherit;text-decoration:none}
 @media(max-width:640px){.tab-hint{display:block}}
 
 /* ── WEATHER / LOCAL TIME CARD */
-.wt-card{background:rgba(255,255,255,0.13);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,0.20);border-radius:16px;
-  margin-bottom:14px;overflow:hidden}
-.wt-header{display:flex;gap:0}
-.wt-half{flex:1;padding:14px 16px;border-right:1px solid rgba(255,255,255,0.12)}
-.wt-half:last-child{border-right:none}
-.wt-label{font-size:10px;color:rgba(255,255,255,0.60);font-weight:700;text-transform:uppercase;
-  letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.wt-value{font-size:22px;font-weight:800;color:#fff;line-height:1.1}
-.wt-sub{font-size:11px;color:rgba(255,255,255,0.65);margin-top:4px}
-.wt-loading{font-size:12px;color:rgba(255,255,255,0.5);padding:12px 16px;text-align:center}
+.wt-card{border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.28)}
+.wt-main{padding:18px 18px 14px;position:relative}
+.wt-top-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.wt-cond{font-size:14px;font-weight:700;color:rgba(255,255,255,0.95);display:flex;align-items:center;gap:6px}
+.wt-cond-icon{font-size:18px;line-height:1}
+.wt-time-block{text-align:right}
+.wt-time{font-size:22px;font-weight:800;color:#fff;line-height:1;letter-spacing:0.03em}
+.wt-date{font-size:11px;color:rgba(255,255,255,0.78);margin-top:3px}
+.wt-temp-big{font-size:62px;font-weight:200;color:#fff;line-height:1;margin:6px 0 2px}
+.wt-bot-row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px}
+.wt-hilo{font-size:13px;color:rgba(255,255,255,0.82);font-weight:500}
+.wt-city{font-size:13px;color:rgba(255,255,255,0.82);font-weight:500;text-align:right}
+.wt-forecast{background:rgba(0,0,0,0.22);padding:10px 16px;display:flex}
+.wt-fc-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.wt-fc-lbl{font-size:10px;color:rgba(255,255,255,0.65);font-weight:700;letter-spacing:.05em}
+.wt-fc-ico{font-size:20px;line-height:1}
+.wt-fc-t{font-size:10px;color:rgba(255,255,255,0.82)}
+.wt-no-data{padding:18px;background:rgba(255,255,255,0.12);font-size:13px;color:rgba(255,255,255,0.6);text-align:center;border-radius:16px;margin-bottom:14px}
 
 /* ═══ LOGIN SCREEN ═══ */
 #ls{position:fixed;inset:0;z-index:9999;
@@ -1629,7 +1637,7 @@ function renderDash(){
     var bl=trip.status==='upcoming'?'b-up':trip.status==='active'?'b-ac':'b-ps';
     var bl2=trip.status==='upcoming'?'即將出發':trip.status==='active'?'進行中':'已結束';
     var todoBar=trip.todos.length?Math.round(done/trip.todos.length*100):0;
-    h+='<div class="tc">'+
+    h+='<div class="tc" onclick="openTrip(\''+trip.id+'\')">'+
       '<div class="tc-accent '+acc+'"></div>'+
       '<div class="tc-body">'+
         '<div class="tc-row1">'+
@@ -1644,10 +1652,7 @@ function renderDash(){
         '</div>'+
         '<div class="tc-footer">'+
           '<div class="tc-pax-info">'+icn('person',13,'rgba(255,255,255,0.5)')+' <span class="tc-pax-text">'+names+'</span> · <span style="color:rgba(255,255,255,0.7);font-weight:700">'+done+'/'+trip.todos.length+'</span></div>'+
-          '<div class="tc-acts">'+
-          '<button class="btn-outline" onclick="openTrip(\''+trip.id+'\')">詳情</button>'+
-          '<button class="btn-solid" onclick="cpRpt(\''+trip.id+'\')">報告</button>'+
-          '</div>'+
+          '<div style="color:rgba(255,255,255,0.35);font-size:20px;line-height:1;flex-shrink:0">›</div>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -1863,66 +1868,114 @@ function renderWeatherTime(trip){
   var el=document.getElementById('wt-panel');
   if(!el) return;
   var dest=trip.destination||'';
-  // Also try last outbound segment's arrival airport as fallback
   var outSegs=(trip.segs||[]).filter(function(s){return s.dir==='out';});
   var lastOut=outSegs[outSegs.length-1];
   var arrAirport=lastOut&&lastOut.ac?lastOut.ac.toLowerCase():'';
   var tz=_getTZ(dest)||_getTZ(arrAirport);
-  var destShort=(dest||arrAirport||'—').replace(/[（(].*$/,'').trim().slice(0,6);
+  var destShort=(dest||arrAirport||'—').replace(/[（(].*$/,'').trim().slice(0,10);
   var weatherCity=dest||arrAirport||'';
   _stopClock('main');
 
-  // Local time panel
-  var timeHtml='';
+  // Weather code → gradient + icon
+  function _wtInfo(code){
+    var c=parseInt(code)||113;
+    if(c===113) return {icon:'☀️',grad:'linear-gradient(135deg,#f97316 0%,#ef4444 100%)'};
+    if(c===116) return {icon:'⛅',grad:'linear-gradient(135deg,#f59e0b 0%,#f97316 100%)'};
+    if(c===119||c===122) return {icon:'☁️',grad:'linear-gradient(135deg,#6366f1 0%,#4338ca 100%)'};
+    if(c===143||c===248||c===260) return {icon:'🌫️',grad:'linear-gradient(135deg,#78716c 0%,#57534e 100%)'};
+    if(c===200||c===386||c===389||c===392||c===395) return {icon:'⛈️',grad:'linear-gradient(135deg,#1e293b 0%,#374151 100%)'};
+    if((c>=227&&c<=338)||(c===368||c===371||c===374||c===377)) return {icon:'❄️',grad:'linear-gradient(135deg,#60a5fa 0%,#3b82f6 100%)'};
+    if(c>=176) return {icon:'🌧️',grad:'linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)'};
+    return {icon:'🌤️',grad:'linear-gradient(135deg,#f59e0b 0%,#ef4444 100%)'};
+  }
+  function _wkDay(dateStr){
+    var days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    try{var d=new Date(dateStr+'T12:00:00');return days[d.getDay()];}catch(e){return '';}
+  }
+
+  // Build the full weather card HTML
+  function _buildCard(info,tempC,desc,hiC,loC,forecast){
+    var timeStr='—',dateStr='';
+    if(tz){
+      try{
+        timeStr=new Intl.DateTimeFormat('en',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
+        var now=new Date();
+        var wk=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Intl.DateTimeFormat('en',{timeZone:tz,weekday:'short'}).format(now)==='Sun'?0:new Intl.DateTimeFormat('en',{timeZone:tz,weekday:'narrow'}).format(now)==='S'&&new Intl.DateTimeFormat('en',{timeZone:tz,weekday:'long'}).format(now)==='Saturday'?6:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(new Intl.DateTimeFormat('en',{timeZone:tz,weekday:'long'}).format(now))];
+        dateStr=new Intl.DateTimeFormat('en',{timeZone:tz,weekday:'short'}).format(now).toUpperCase()+' '+new Intl.DateTimeFormat('en',{timeZone:tz,month:'numeric',day:'numeric'}).format(now);
+      }catch(e){}
+    }
+    var fcHtml='';
+    if(forecast&&forecast.length){
+      fcHtml='<div class="wt-forecast">';
+      forecast.forEach(function(f){
+        fcHtml+='<div class="wt-fc-day">'+
+          '<div class="wt-fc-lbl">'+_wkDay(f.date)+'</div>'+
+          '<div class="wt-fc-ico">'+f.icon+'</div>'+
+          '<div class="wt-fc-t">'+f.hi+'°/'+f.lo+'°</div>'+
+        '</div>';
+      });
+      fcHtml+='</div>';
+    }
+    el.innerHTML=
+      '<div class="wt-main" style="background:'+info.grad+'">'+
+        '<div class="wt-top-row">'+
+          '<div class="wt-cond"><span class="wt-cond-icon">'+info.icon+'</span><span>'+(desc||'—')+'</span></div>'+
+          '<div class="wt-time-block">'+
+            '<div class="wt-time" id="wt-clock">'+timeStr+'</div>'+
+            '<div class="wt-date" id="wt-date">'+dateStr+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="wt-temp-big">'+(tempC!==null?tempC+'°':'…')+'</div>'+
+        '<div class="wt-bot-row">'+
+          '<div class="wt-hilo">'+(hiC!==null?hiC+'°/'+loC+'°':'')+'</div>'+
+          '<div class="wt-city">'+destShort+'</div>'+
+        '</div>'+
+      '</div>'+
+      fcHtml;
+  }
+
+  // Initial render (no weather data yet)
+  _buildCard(_wtInfo(113),null,'載入天氣中…',null,null,null);
+
+  // Start live clock
   if(tz){
-    timeHtml=
-      '<div class="wt-half">'+
-        '<div class="wt-label">🕐 當地時間</div>'+
-        '<div class="wt-value" id="wt-clock">—</div>'+
-        '<div class="wt-sub" id="wt-tz">'+tz.split('/')[1].replace(/_/g,' ')+'</div>'+
-      '</div>';
-    // Start clock
     var updateClock=function(){
       var c=document.getElementById('wt-clock');
+      var d=document.getElementById('wt-date');
       if(!c){_stopClock('main');return;}
       try{
-        var t=new Intl.DateTimeFormat('zh-TW',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
-        var d=new Intl.DateTimeFormat('zh-TW',{timeZone:tz,month:'long',day:'numeric',weekday:'short'}).format(new Date());
-        c.textContent=t;
-        var ds=document.getElementById('wt-tz');
-        if(ds) ds.textContent=d;
+        var now=new Date();
+        c.textContent=new Intl.DateTimeFormat('en',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(now);
+        if(d) d.textContent=new Intl.DateTimeFormat('en',{timeZone:tz,weekday:'short'}).format(now).toUpperCase()+' '+new Intl.DateTimeFormat('en',{timeZone:tz,month:'numeric',day:'numeric'}).format(now);
       }catch(e){}
     };
     updateClock();
     _wtClocks['main']=setInterval(updateClock,1000);
-  } else {
-    timeHtml='<div class="wt-half"><div class="wt-label">🕐 當地時間</div><div class="wt-value" style="font-size:14px;opacity:.6">無法識別時區</div><div class="wt-sub">'+destShort+'</div></div>';
   }
 
-  // Weather panel - start loading
-  el.innerHTML='<div class="wt-header">'+timeHtml+'<div class="wt-half" id="wt-weather-panel"><div class="wt-label">🌤 當地天氣</div><div class="wt-sub" style="opacity:.5">載入中…</div></div></div>';
-
-  // Fetch weather from wttr.in
+  // Fetch weather
   var city=weatherCity||destShort;
   fetch('https://wttr.in/'+encodeURIComponent(city)+'?format=j1')
     .then(function(r){return r.ok?r.json():Promise.reject(r.status);})
     .then(function(data){
-      var wp=document.getElementById('wt-weather-panel');
-      if(!wp) return;
       var d2=data.data||data;
-      var c=d2.current_condition&&d2.current_condition[0];
-      if(!c){wp.innerHTML='<div class="wt-label">🌤 天氣</div><div class="wt-sub" style="opacity:.5">無資料</div>';return;}
-      var tempC=c.temp_C,feelsC=c.FeelsLikeC,humid=c.humidity,windKmph=c.windspeedKmph;
-      var desc=(c.lang_zh&&c.lang_zh[0]&&c.lang_zh[0].value)||(c.weatherDesc&&c.weatherDesc[0]&&c.weatherDesc[0].value)||'';
-      wp.innerHTML=
-        '<div class="wt-label">🌤 當地天氣</div>'+
-        '<div class="wt-value">'+tempC+'°C</div>'+
-        '<div class="wt-sub">'+desc+(feelsC?' · 體感 '+feelsC+'°C':'')+'</div>'+
-        '<div class="wt-sub" style="margin-top:2px">💧 '+humid+'% · 💨 '+windKmph+' km/h</div>';
+      var cur=d2.current_condition&&d2.current_condition[0];
+      if(!cur){_buildCard(_wtInfo(113),null,'無資料',null,null,null);return;}
+      var code=cur.weatherCode||'113';
+      var info=_wtInfo(code);
+      var tempC=cur.temp_C;
+      var desc=(cur.lang_zh&&cur.lang_zh[0]&&cur.lang_zh[0].value)||(cur.weatherDesc&&cur.weatherDesc[0]&&cur.weatherDesc[0].value)||'';
+      var wdays=d2.weather||[];
+      var hiC=wdays[0]?wdays[0].maxtempC:null;
+      var loC=wdays[0]?wdays[0].mintempC:null;
+      var forecast=wdays.slice(0,4).map(function(w){
+        var hCode=w.hourly&&w.hourly[4]?w.hourly[4].weatherCode:code;
+        return {date:w.date,icon:_wtInfo(hCode).icon,hi:w.maxtempC,lo:w.mintempC};
+      });
+      _buildCard(info,tempC,desc,hiC,loC,forecast);
     })
     .catch(function(){
-      var wp=document.getElementById('wt-weather-panel');
-      if(wp) wp.innerHTML='<div class="wt-label">🌤 天氣</div><div class="wt-sub" style="opacity:.5">暫時無法取得</div>';
+      _buildCard(_wtInfo(113),null,'暫時無法取得',null,null,null);
     });
 }
 
@@ -1936,7 +1989,7 @@ function rFlight(trip){
       '<div style="display:flex;gap:8px;align-items:center">'+
         '<input id="trip-purp" type="text" value="'+escHtml(trip.purpose||'')+'" '+
           'placeholder="例：參加展覽、客戶拜訪、技術交流" '+
-          'style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;color:var(--text)">'+
+          'style="flex:1;border:1.5px solid rgba(255,255,255,0.28);border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;color:#fff;background:rgba(255,255,255,0.12)">'+
         '<button onclick="savePurpose(\''+trip.id+'\')" '+
           'style="flex-shrink:0;padding:9px 16px;border-radius:8px;background:var(--pri);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">儲存</button>'+
       '</div>'+
