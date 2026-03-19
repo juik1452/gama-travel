@@ -4556,33 +4556,40 @@ function _fsPush(){
 }
 
 function _fsPull(data){
+  // 只從其他裝置接收新增的行程，不覆蓋本機已有的資料
   if(!data||!data.trips) return;
   var remote=data.trips;
   var local=lsGet('gama_trips')||[];
-  var remoteIds=new Set(remote.map(function(t){return t.id;}));
-  local.forEach(function(t){if(!remoteIds.has(t.id)) remote.push(t);});
+  var localIds=new Set(local.map(function(t){return t.id;}));
+  // 只加入本機沒有的遠端行程（新裝置新增的資料）
+  var newFromRemote=remote.filter(function(t){return !localIds.has(t.id);});
+  if(newFromRemote.length===0) return; // 沒有新資料，不需要更新
+  var merged=local.concat(newFromRemote);
   MEM=null;
-  lsSet('gama_trips',remote);
+  lsSet('gama_trips',merged);
   renderDash();
   _syncStatus('\u2705 Firebase 即時同步中 · 所有裝置自動更新');
 }
 
+var _fsSyncing=false;
 function _startFsSync(){
-  if(!_fbDb||!_fbUser) return;
+  if(!_fbDb||!_fbUser||_fsSyncing) return;
+  _fsSyncing=true;
   if(_fsUnsubscribe) _fsUnsubscribe();
-  // 先拉一次現有資料
-  _fsDoc().get().then(function(doc){
-    if(doc.exists) _fsPull(doc.data());
-    else _fsPush(); // 空的，推上去
-  });
-  // 開啟即時監聽
-  _fsUnsubscribe=_fsDoc().onSnapshot(function(doc){
-    if(doc.exists&&doc.metadata.hasPendingWrites===false){
+  // 先把本機資料推上去（保留本機所有刪除和修改）
+  _fsPush();
+  // 等推完再開始監聽（500ms 後確保 push 已送出）
+  setTimeout(function(){
+    _fsUnsubscribe=_fsDoc().onSnapshot(function(doc){
+      if(!doc.exists||doc.metadata.hasPendingWrites) return;
+      // 只同步其他裝置新增的資料
       _fsPull(doc.data());
-    }
-  },function(err){
-    _syncStatus('\u26a0\ufe0f 同步錯誤：'+err.message);
-  });
+      _syncStatus('\u2705 Firebase 即時同步中 · 所有裝置自動更新');
+    },function(err){
+      _syncStatus('\u26a0\ufe0f 同步錯誤：'+err.message);
+    });
+    _fsSyncing=false;
+  },500);
 }
 
 function signInWithGoogle(){
