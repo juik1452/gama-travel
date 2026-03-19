@@ -21,7 +21,7 @@
   --bg:rgba(255,255,255,0.08);
   --card:rgba(255,255,255,0.15);
   --border:rgba(255,255,255,0.22);
-  --text:#ffffff;--muted:rgba(255,255,255,0.62);
+  --text:#ffffff;--muted:rgba(255,255,255,0.72);
   --sh:0 8px 32px rgba(0,0,0,0.14),inset 0 1px 0 rgba(255,255,255,0.18);
   --r:16px;--rs:10px;
 }
@@ -123,7 +123,7 @@ a{color:inherit;text-decoration:none}
   font-size:14px;background:rgba(255,255,255,0.1);color:#fff;outline:none;transition:border .2s}
 .inp::placeholder{color:rgba(255,255,255,0.45)}
 .inp:focus{border-color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.15);box-shadow:0 0 0 3px rgba(255,255,255,0.1)}
-.lbl{font-size:12px;color:rgba(255,255,255,0.7);display:block;margin-bottom:5px;font-weight:600}
+.lbl{font-size:12px;color:rgba(255,255,255,0.82);display:block;margin-bottom:5px;font-weight:600}
 .bf{width:100%;padding:15px;font-size:15px;font-weight:700;border-radius:var(--rs);margin-top:8px}
 .bf:active{opacity:.8}
 .fcnt{font-size:12px;color:rgba(255,255,255,0.9);font-weight:700;text-align:center;margin-top:8px;min-height:18px}
@@ -348,6 +348,19 @@ a{color:inherit;text-decoration:none}
 .tab-hint{display:none;text-align:center;font-size:11px;color:rgba(255,255,255,0.45);padding:4px 0 2px;letter-spacing:.02em}
 @media(max-width:640px){.tab-hint{display:block}}
 
+/* ── WEATHER / LOCAL TIME CARD */
+.wt-card{background:rgba(255,255,255,0.13);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,0.20);border-radius:16px;
+  margin-bottom:14px;overflow:hidden}
+.wt-header{display:flex;gap:0}
+.wt-half{flex:1;padding:14px 16px;border-right:1px solid rgba(255,255,255,0.12)}
+.wt-half:last-child{border-right:none}
+.wt-label{font-size:10px;color:rgba(255,255,255,0.60);font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.wt-value{font-size:22px;font-weight:800;color:#fff;line-height:1.1}
+.wt-sub{font-size:11px;color:rgba(255,255,255,0.65);margin-top:4px}
+.wt-loading{font-size:12px;color:rgba(255,255,255,0.5);padding:12px 16px;text-align:center}
+
 /* ═══ LOGIN SCREEN ═══ */
 #ls{position:fixed;inset:0;z-index:9999;
   background:linear-gradient(140deg,#3a5f7d 0%,#5b80a0 40%,#7a9fb8 75%,#8fafc4 100%);
@@ -433,17 +446,17 @@ select.inp option{background:#3a6080;color:#fff}
 .tc-body{flex:1;padding:16px 16px 14px}
 .tc-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
 .tc-dest{font-size:18px;font-weight:800;color:#fff;line-height:1.2}
-.tc-ev{font-size:12px;color:rgba(255,255,255,0.58);margin-top:3px;font-weight:500}
+.tc-ev{font-size:12px;color:rgba(255,255,255,0.72);margin-top:3px;font-weight:500}
 .tc-dates-row{display:flex;align-items:center;gap:6px;margin-bottom:10px;
   background:rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;
   border:1px solid rgba(255,255,255,0.12)}
 .tc-date-ep{display:flex;flex-direction:column;gap:1px}
-.tc-date-lbl{font-size:10px;color:rgba(255,255,255,0.5);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.tc-date-lbl{font-size:10px;color:rgba(255,255,255,0.68);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 .tc-date-val{font-size:13px;font-weight:700;color:#fff}
 .tc-date-sep{flex:1;display:flex;align-items:center;justify-content:center;
   font-size:16px;color:rgba(255,255,255,0.3)}
 .tc-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.tc-pax-info{font-size:12px;color:rgba(255,255,255,0.6);display:flex;align-items:center;gap:5px;flex:1;min-width:0}
+.tc-pax-info{font-size:12px;color:rgba(255,255,255,0.75);display:flex;align-items:center;gap:5px;flex:1;min-width:0}
 .tc-pax-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tc-acts{display:flex;gap:6px;flex-shrink:0}
 .btn-outline{font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;
@@ -458,7 +471,7 @@ select.inp option{background:#3a6080;color:#fff}
   border:1px solid rgba(255,255,255,0.18);border-radius:14px;
   padding:12px 10px;text-align:center}
 .stat-num{font-size:26px;font-weight:900;color:#fff;line-height:1}
-.stat-lbl{font-size:10px;color:rgba(255,255,255,0.55);font-weight:700;text-transform:uppercase;
+.stat-lbl{font-size:10px;color:rgba(255,255,255,0.70);font-weight:700;text-transform:uppercase;
   letter-spacing:.06em;margin-top:4px}
 .stat-card.stat-hi{background:rgba(255,255,255,0.20);border-color:rgba(255,255,255,0.30)}
 
@@ -473,7 +486,7 @@ select.inp option{background:#3a6080;color:#fff}
 .hero-next{position:relative}
 .hero-next-dest{font-size:20px;font-weight:900;color:#fff;margin-bottom:2px}
 .hero-next-date{font-size:13px;color:rgba(255,255,255,0.7)}
-.hero-empty-txt{font-size:14px;color:rgba(255,255,255,0.6);position:relative}
+.hero-empty-txt{font-size:14px;color:rgba(255,255,255,0.78);position:relative}
 
 /* ── EMPTY STATE */
 .empty{text-align:center;padding:48px 20px 24px;color:rgba(255,255,255,0.6)}
@@ -505,7 +518,7 @@ select.inp option{background:#3a6080;color:#fff}
 .sync-inp::placeholder{color:rgba(255,255,255,0.38)}
 .sync-inp:focus{border-color:rgba(255,255,255,0.55)}
 .sync-actions{display:flex;gap:8px;margin-bottom:10px}
-.sync-status{font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:12px}
+.sync-status{font-size:11px;color:rgba(255,255,255,0.70);margin-bottom:12px}
 .sync-divider{border:none;border-top:1px solid rgba(255,255,255,0.12);margin-bottom:12px}
 .sync-footer{display:flex;gap:8px}
 
@@ -1700,6 +1713,7 @@ function showDetail(trip,isDraft){
   document.getElementById('tf').classList.add('on');
   // render all tabs immediately
   rFlight(trip); rVisa(trip); rHotel(trip); rDispatch(trip); rTodo(trip); rEmployee(trip); rReport(trip);
+  renderWeatherTime(trip);
   go('sde');
 }
 var _tabOrder=['tf','tv','th','td','tt','te','tr'];
@@ -1767,6 +1781,151 @@ function delTripStep(){
 // FLIGHT TAB
 // ═══════════════════════════════════════
 function dow(d){try{return['日','一','二','三','四','五','六'][new Date(d).getDay()];}catch{return '';}}
+// ── 當地天氣 & 時間 ──────────────────────────────────────────────
+var _TZ={
+  '東京':'Asia/Tokyo','大阪':'Asia/Tokyo','名古屋':'Asia/Tokyo','福岡':'Asia/Tokyo','japan':'Asia/Tokyo','tokyo':'Asia/Tokyo','osaka':'Asia/Tokyo',
+  '首爾':'Asia/Seoul','釜山':'Asia/Seoul','korea':'Asia/Seoul','seoul':'Asia/Seoul',
+  '北京':'Asia/Shanghai','上海':'Asia/Shanghai','廣州':'Asia/Shanghai','深圳':'Asia/Shanghai','成都':'Asia/Shanghai','杭州':'Asia/Shanghai','南京':'Asia/Shanghai','china':'Asia/Shanghai','beijing':'Asia/Shanghai','shanghai':'Asia/Shanghai',
+  '香港':'Asia/Hong_Kong','hong kong':'Asia/Hong_Kong','hk':'Asia/Hong_Kong',
+  '澳門':'Asia/Macau','macao':'Asia/Macau','macau':'Asia/Macau',
+  '新加坡':'Asia/Singapore','singapore':'Asia/Singapore',
+  '曼谷':'Asia/Bangkok','thailand':'Asia/Bangkok','bangkok':'Asia/Bangkok',
+  '吉隆坡':'Asia/Kuala_Lumpur','malaysia':'Asia/Kuala_Lumpur','kuala lumpur':'Asia/Kuala_Lumpur',
+  '胡志明':'Asia/Ho_Chi_Minh','河內':'Asia/Ho_Chi_Minh','vietnam':'Asia/Ho_Chi_Minh',
+  '雅加達':'Asia/Jakarta','峇里':'Asia/Makassar','indonesia':'Asia/Jakarta','bali':'Asia/Makassar',
+  '馬尼拉':'Asia/Manila','philippines':'Asia/Manila','manila':'Asia/Manila',
+  '仰光':'Asia/Rangoon','myanmar':'Asia/Rangoon',
+  '金邊':'Asia/Phnom_Penh','cambodia':'Asia/Phnom_Penh',
+  '紐約':'America/New_York','new york':'America/New_York','ny':'America/New_York',
+  '洛杉磯':'America/Los_Angeles','los angeles':'America/Los_Angeles','la':'America/Los_Angeles',
+  '舊金山':'America/Los_Angeles','san francisco':'America/Los_Angeles','sf':'America/Los_Angeles',
+  '西雅圖':'America/Los_Angeles','seattle':'America/Los_Angeles',
+  '芝加哥':'America/Chicago','chicago':'America/Chicago',
+  '波士頓':'America/New_York','boston':'America/New_York',
+  '休士頓':'America/Chicago','houston':'America/Chicago',
+  '倫敦':'Europe/London','london':'Europe/London','uk':'Europe/London',
+  '巴黎':'Europe/Paris','paris':'Europe/Paris','france':'Europe/Paris',
+  '法蘭克福':'Europe/Berlin','frankfurt':'Europe/Berlin',
+  '柏林':'Europe/Berlin','berlin':'Europe/Berlin','germany':'Europe/Berlin',
+  '阿姆斯特丹':'Europe/Amsterdam','amsterdam':'Europe/Amsterdam',
+  '蘇黎世':'Europe/Zurich','zurich':'Europe/Zurich','switzerland':'Europe/Zurich',
+  '米蘭':'Europe/Rome','羅馬':'Europe/Rome','milan':'Europe/Rome','rome':'Europe/Rome',
+  '馬德里':'Europe/Madrid','madrid':'Europe/Madrid',
+  '雪梨':'Australia/Sydney','sydney':'Australia/Sydney',
+  '墨爾本':'Australia/Melbourne','melbourne':'Australia/Melbourne',
+  '奧克蘭':'Pacific/Auckland','auckland':'Pacific/Auckland',
+  '杜拜':'Asia/Dubai','dubai':'Asia/Dubai','uae':'Asia/Dubai',
+  '孟買':'Asia/Kolkata','德里':'Asia/Kolkata','india':'Asia/Kolkata','mumbai':'Asia/Kolkata',
+  '開羅':'Africa/Cairo','cairo':'Africa/Cairo',
+  // ── 機場代碼 ──
+  'bkk':'Asia/Bangkok','dmk':'Asia/Bangkok',
+  'nrt':'Asia/Tokyo','hnd':'Asia/Tokyo','kix':'Asia/Tokyo','cts':'Asia/Tokyo','fuk':'Asia/Tokyo',
+  'icn':'Asia/Seoul','gmp':'Asia/Seoul',
+  'pek':'Asia/Shanghai','pvg':'Asia/Shanghai','can':'Asia/Shanghai','ctu':'Asia/Shanghai','sha':'Asia/Shanghai','tao':'Asia/Shanghai','xmn':'Asia/Shanghai',
+  'hkg':'Asia/Hong_Kong',
+  'mfm':'Asia/Macau',
+  'sin':'Asia/Singapore',
+  'kul':'Asia/Kuala_Lumpur','pen':'Asia/Kuala_Lumpur',
+  'sgn':'Asia/Ho_Chi_Minh','han':'Asia/Ho_Chi_Minh',
+  'cgk':'Asia/Jakarta','dps':'Asia/Makassar',
+  'mnl':'Asia/Manila','ceb':'Asia/Manila',
+  'rgn':'Asia/Rangoon',
+  'pnh':'Asia/Phnom_Penh',
+  'jfk':'America/New_York','ewr':'America/New_York','lga':'America/New_York','bos':'America/New_York','iad':'America/New_York','dca':'America/New_York','mia':'America/New_York','atl':'America/New_York',
+  'lax':'America/Los_Angeles','sfo':'America/Los_Angeles','sea':'America/Los_Angeles','las':'America/Los_Angeles','pdx':'America/Los_Angeles',
+  'ord':'America/Chicago','mdw':'America/Chicago','dfw':'America/Chicago','iah':'America/Chicago','den':'America/Denver','phx':'America/Phoenix',
+  'lhr':'Europe/London','lgw':'Europe/London','stn':'Europe/London','man':'Europe/London',
+  'cdg':'Europe/Paris','ory':'Europe/Paris',
+  'fra':'Europe/Berlin','muc':'Europe/Berlin','ber':'Europe/Berlin','ham':'Europe/Berlin',
+  'ams':'Europe/Amsterdam',
+  'zrh':'Europe/Zurich','gva':'Europe/Zurich',
+  'mxp':'Europe/Rome','fco':'Europe/Rome',
+  'mad':'Europe/Madrid','bcn':'Europe/Madrid',
+  'syd':'Australia/Sydney','mel':'Australia/Melbourne','bne':'Australia/Brisbane','per':'Australia/Perth',
+  'akl':'Pacific/Auckland','chc':'Pacific/Auckland',
+  'dxb':'Asia/Dubai','auh':'Asia/Dubai',
+  'bom':'Asia/Kolkata','del':'Asia/Kolkata','maa':'Asia/Kolkata','blr':'Asia/Kolkata',
+  'cai':'Africa/Cairo','jnb':'Africa/Johannesburg','nbo':'Africa/Nairobi',
+  '約翰尼斯堡':'Africa/Johannesburg','johannesburg':'Africa/Johannesburg'
+};
+
+function _getTZ(dest){
+  if(!dest) return null;
+  var d=dest.toLowerCase();
+  for(var k in _TZ){if(d.indexOf(k)>=0) return _TZ[k];}
+  return null;
+}
+
+var _wtClocks={};
+function _stopClock(id){if(_wtClocks[id]){clearInterval(_wtClocks[id]);delete _wtClocks[id];}}
+
+function renderWeatherTime(trip){
+  var el=document.getElementById('wt-panel');
+  if(!el) return;
+  var dest=trip.destination||'';
+  // Also try last outbound segment's arrival airport as fallback
+  var outSegs=(trip.segs||[]).filter(function(s){return s.dir==='out';});
+  var lastOut=outSegs[outSegs.length-1];
+  var arrAirport=lastOut&&lastOut.ac?lastOut.ac.toLowerCase():'';
+  var tz=_getTZ(dest)||_getTZ(arrAirport);
+  var destShort=(dest||arrAirport||'—').replace(/[（(].*$/,'').trim().slice(0,6);
+  var weatherCity=dest||arrAirport||'';
+  _stopClock('main');
+
+  // Local time panel
+  var timeHtml='';
+  if(tz){
+    timeHtml=
+      '<div class="wt-half">'+
+        '<div class="wt-label">🕐 當地時間</div>'+
+        '<div class="wt-value" id="wt-clock">—</div>'+
+        '<div class="wt-sub" id="wt-tz">'+tz.split('/')[1].replace(/_/g,' ')+'</div>'+
+      '</div>';
+    // Start clock
+    var updateClock=function(){
+      var c=document.getElementById('wt-clock');
+      if(!c){_stopClock('main');return;}
+      try{
+        var t=new Intl.DateTimeFormat('zh-TW',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
+        var d=new Intl.DateTimeFormat('zh-TW',{timeZone:tz,month:'long',day:'numeric',weekday:'short'}).format(new Date());
+        c.textContent=t;
+        var ds=document.getElementById('wt-tz');
+        if(ds) ds.textContent=d;
+      }catch(e){}
+    };
+    updateClock();
+    _wtClocks['main']=setInterval(updateClock,1000);
+  } else {
+    timeHtml='<div class="wt-half"><div class="wt-label">🕐 當地時間</div><div class="wt-value" style="font-size:14px;opacity:.6">無法識別時區</div><div class="wt-sub">'+destShort+'</div></div>';
+  }
+
+  // Weather panel - start loading
+  el.innerHTML='<div class="wt-header">'+timeHtml+'<div class="wt-half" id="wt-weather-panel"><div class="wt-label">🌤 當地天氣</div><div class="wt-sub" style="opacity:.5">載入中…</div></div></div>';
+
+  // Fetch weather from wttr.in
+  var city=weatherCity||destShort;
+  fetch('https://wttr.in/'+encodeURIComponent(city)+'?format=j1')
+    .then(function(r){return r.ok?r.json():Promise.reject(r.status);})
+    .then(function(data){
+      var wp=document.getElementById('wt-weather-panel');
+      if(!wp) return;
+      var d2=data.data||data;
+      var c=d2.current_condition&&d2.current_condition[0];
+      if(!c){wp.innerHTML='<div class="wt-label">🌤 天氣</div><div class="wt-sub" style="opacity:.5">無資料</div>';return;}
+      var tempC=c.temp_C,feelsC=c.FeelsLikeC,humid=c.humidity,windKmph=c.windspeedKmph;
+      var desc=(c.lang_zh&&c.lang_zh[0]&&c.lang_zh[0].value)||(c.weatherDesc&&c.weatherDesc[0]&&c.weatherDesc[0].value)||'';
+      wp.innerHTML=
+        '<div class="wt-label">🌤 當地天氣</div>'+
+        '<div class="wt-value">'+tempC+'°C</div>'+
+        '<div class="wt-sub">'+desc+(feelsC?' · 體感 '+feelsC+'°C':'')+'</div>'+
+        '<div class="wt-sub" style="margin-top:2px">💧 '+humid+'% · 💨 '+windKmph+' km/h</div>';
+    })
+    .catch(function(){
+      var wp=document.getElementById('wt-weather-panel');
+      if(wp) wp.innerHTML='<div class="wt-label">🌤 天氣</div><div class="wt-sub" style="opacity:.5">暫時無法取得</div>';
+    });
+}
+
 function rFlight(trip){
   var out=trip.segs.filter(function(s){return s.dir==='out';});
   var inb=trip.segs.filter(function(s){return s.dir==='in';});
@@ -1782,7 +1941,7 @@ function rFlight(trip){
           'style="flex-shrink:0;padding:9px 16px;border-radius:8px;background:var(--pri);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">儲存</button>'+
       '</div>'+
     '</div>';
-  var h=purposeCard+'<div class="sh"><span>去程航班</span><span class="stag st-o">出發</span></div>';
+  var h='<div id="wt-panel" class="wt-card"></div>'+purposeCard+'<div class="sh"><span>去程航班</span><span class="stag st-o">出發</span></div>';
   out.forEach(function(s){h+=fCard(s,'out');});
   if(inb.length){h+='<div class="sh"><span>回程航班</span><span class="stag st-i">返回</span></div>';}
   inb.forEach(function(s){h+=fCard(s,'in');});
@@ -3911,6 +4070,7 @@ function _rateLabel(rate){
 
 // ── 天數與津貼計算 ──
 function _calcDays(deptDate,deptTime,retDate,retTime){
+  if(!deptDate&&!retDate) return {dCoef:0,dLabel:'—',rCoef:0,rLabel:'—',mid:0,total:0};
   function hhmm(t){if(!t)return 0;var p=(t||'00:00').split(':');return parseInt(p[0]||0)*100+parseInt(p[1]||0);}
   var dt=hhmm(deptTime), rt=hhmm(retTime);
   // 出發日：16:00含前=全日，16:00後=半日
@@ -4065,15 +4225,17 @@ function buildReportText(trip){
 
   // 差旅費（每人分開列）
   var perPax=(billable*rate);
+  var fmtUSD=function(v){return v%1===0?v.toFixed(0):v.toFixed(1);};
   lines.push('【差旅費津貼】');
   lines.push('  地區費率：USD $'+rate+'/人/日（'+_rateLabel(rate)+'）');
-  lines.push('  計費天數：'+billable+' 日'+(pdTotal>0?' （已扣除私人行程 '+pdTotal+' 日）':''));
+  lines.push('  計費天數：'+fmtUSD(billable)+' 日'+(pdTotal>0?' （已扣除私人行程 '+fmtUSD(pdTotal)+' 日）':''));
   lines.push('');
   trip.passengers.forEach(function(p){
-    lines.push('  '+p.name+'：USD $'+perPax.toFixed(1));
+    lines.push('  '+p.name+'：USD $'+fmtUSD(perPax)+'　≒ TWD $'+Math.round(perPax*32.5).toLocaleString());
   });
   lines.push('  ───────────────────');
-  lines.push('  總計：USD $'+totalUSD.toFixed(1)+'（'+numPax+' 人）');
+  lines.push('  總計：USD $'+fmtUSD(totalUSD)+'（'+numPax+' 人）　≒ TWD $'+Math.round(totalUSD*32.5).toLocaleString());
+  lines.push('  ※ 匯率以 USD 1 = TWD 32.5 估算，實際依財務部公告為準');
   lines.push('  ※ 如遇班機延誤，依實際抵達時間調整計算');
   lines.push('');
 
