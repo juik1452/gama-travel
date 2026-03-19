@@ -402,6 +402,15 @@ a{color:inherit;text-decoration:none}
   box-shadow:0 4px 20px rgba(0,0,0,0.2)}
 .l-btn:hover{opacity:.92}.l-btn:active{opacity:.8;transform:scale(.98)}
 .l-ver{font-size:11px;color:rgba(255,255,255,0.4);margin-top:18px}
+.l-google-btn{width:100%;padding:12px;margin-bottom:16px;
+  background:#fff;color:#1f1f1f;border:none;border-radius:10px;
+  font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.01em;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.18);transition:opacity .15s,transform .1s}
+.l-google-btn:hover{opacity:.92}.l-google-btn:active{opacity:.8;transform:scale(.98)}
+.l-divider{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.l-divider::before,.l-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.2)}
+.l-divider span{font-size:11px;color:rgba(255,255,255,0.45);white-space:nowrap}
 
 @keyframes lc-shake{0%,100%{transform:none}20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 .lc-shake{animation:lc-shake .38s ease}
@@ -576,6 +585,11 @@ if(typeof pdfjsLib!=='undefined'){
     </div>
     <div class="l-title">BizGo Pro</div>
     <div class="l-sub">Gama Technology · 請登入後繼續</div>
+    <button class="l-google-btn" onclick="signInWithGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.7 7.4 6.3 14.7z"/><path fill="#FBBC05" d="M24 46c5.8 0 10.8-1.9 14.8-5.2l-6.8-5.6C29.8 36.7 27 37.5 24 37.5c-5.8 0-10.7-3.6-12.6-8.7l-7 5.4C8.1 41.8 15.5 46 24 46z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.9 2.8-2.8 5.2-5.3 6.7l6.8 5.6c4-3.7 6.2-9.2 6.2-16-.1-1.3-.2-2.7-.5-4z" opacity=".9"/></svg>
+      使用 Google 帳號登入
+    </button>
+    <div class="l-divider"><span>或使用帳號密碼</span></div>
     <div class="l-err" id="l-err">帳號或密碼錯誤，請重新輸入</div>
     <div class="l-field">
       <label>帳號</label>
@@ -588,7 +602,7 @@ if(typeof pdfjsLib!=='undefined'){
              onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="l-btn" onclick="doLogin()">登 入</button>
-    <div class="l-ver">v2026.03 · 資料僅存於本機</div>
+    <div class="l-ver">v2026.03 · Firebase 雲端同步</div>
   </div>
 </div>
 
@@ -799,6 +813,8 @@ function doLogin(){
 }
 
 function doLogout(){
+  if(_fsUnsubscribe){_fsUnsubscribe();_fsUnsubscribe=null;}
+  if(_fbAuth) _fbAuth.signOut();
   localStorage.removeItem(AUTH_KEY);
   localStorage.removeItem(AUTH_ROLE_KEY);
   location.reload();
@@ -1526,6 +1542,9 @@ function _hookSync(){
 
 function autoReconnectSync(){
   _hookSync();
+  // Firebase 即時同步（優先）
+  if(_fbUser&&_fbDb){_startFsSync();return;}
+  // Fallback: GitHub Gist 同步
   var saved=getSyncToken();
   var gistId=getSyncGistId();
   if(saved&&gistId){
@@ -1589,7 +1608,10 @@ function getTrips(){
   });
   MEM=stored; lsSet('gama_trips',MEM); return MEM;
 }
-function saveTrips(){lsSet('gama_trips',MEM);}
+function saveTrips(){
+  lsSet('gama_trips',MEM);
+  _fsPush();
+}
 function addOrUpdateTrip(t){
   var trips=getTrips(),idx=trips.findIndex(function(x){return x.id===t.id;});
   if(idx>=0)trips[idx]=t; else trips.unshift(t);
@@ -1661,28 +1683,28 @@ function renderDash(){
     '</div>';
   });
   // 裝置同步卡片
-  var isSynced=!!(getSyncToken()&&getSyncGistId());
+  var isFbSynced=!!(_fbUser);
+  var isGistSynced=!!(getSyncToken()&&getSyncGistId());
+  var syncOn=isFbSynced||isGistSynced;
+  var syncUser=isFbSynced?(_fbUser.displayName||_fbUser.email):'';
   h+='<div class="sec-title" style="margin-top:8px">裝置同步</div>'+
   '<div class="sync-card">'+
     '<div class="sync-header">'+
       '<div class="sync-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>'+
       '<span class="sync-title">跨裝置同步</span>'+
-      '<span class="sync-badge '+(isSynced?'sync-badge-on':'sync-badge-off')+'">'+(isSynced?'已連線':'未連線')+'</span>'+
+      '<span class="sync-badge '+(syncOn?'sync-badge-on':'sync-badge-off')+'">'+(syncOn?'已連線':'未連線')+'</span>'+
     '</div>'+
     '<div class="sync-body">'+
-      (isSynced?''
-        :'<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:12px;line-height:1.7">貼上 GitHub Token（gist 權限）即可跨裝置同步資料<br><span style="opacity:.7">① 點「取得 Token」→ 勾選 gist → 產生 → 複製<br>② 貼入下方 ③ 點連線</span></div>')+
-      '<div class="sync-inp-row">'+
-        '<input id="sync-key-inp" class="sync-inp" type="password" placeholder="GitHub Personal Access Token">'+
-        (isSynced?'<button class="btn-outline" onclick="fbDisconnect()" style="white-space:nowrap">中斷</button>':
-                  '<button class="btn-outline" onclick="genSyncKey()" style="white-space:nowrap">取得</button>')+
-      '</div>'+
-      '<div class="sync-actions">'+
-        (isSynced
-          ?'<button class="btn-solid" style="flex:1" onclick="_ghPull();_syncStatus(\'🔄 同步中…\')">🔄 立即同步</button>'
-          :'<button class="btn-solid" style="flex:1" onclick="fbConnect(document.getElementById(\'sync-key-inp\').value)">🔗 連線同步</button>')+
-      '</div>'+
-      '<div id="sync-status" class="sync-status">'+(isSynced?'✅ 連線中，每 30 秒自動同步':'')+'</div>'+
+      (isFbSynced
+        ?'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 12px;background:rgba(255,255,255,0.1);border-radius:10px">'+
+            '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>'+
+            '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#fff">Google 帳號已連線</div>'+
+            '<div style="font-size:11px;color:rgba(255,255,255,0.6)">'+escHtml(syncUser)+'</div></div>'+
+            '<div style="width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;box-shadow:0 0 6px #4ade80"></div>'+
+          '</div>'
+        :'<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:12px;line-height:1.7;padding:10px 12px;background:rgba(255,255,255,0.06);border-radius:10px">'+
+            '尚未連線。請登出後改用 Google 帳號登入，即可啟用即時雲端同步。</div>')+
+      '<div id="sync-status" class="sync-status" style="margin-bottom:10px">'+(isFbSynced?'✅ Firebase 即時同步中 · 所有裝置自動更新':'')+'</div>'+
       '<hr class="sync-divider">'+
       '<div class="sync-footer">'+
         '<button class="btn-outline" style="flex:1;font-size:12px" onclick="exportData()">📤 匯出備份</button>'+
@@ -4507,6 +4529,96 @@ function installPWA(){
     if(b) b.classList.remove('show');
   });
 }
+// ═══════════════════════════════════════
+// FIREBASE INTEGRATION
+// ═══════════════════════════════════════
+var FIREBASE_CONFIG={
+  apiKey:'AIzaSyABh39cwyZDAlvG5TzDgyLW-6ogSHgq7ls',
+  authDomain:'gama-travel-sync.firebaseapp.com',
+  projectId:'gama-travel-sync',
+  storageBucket:'gama-travel-sync.firebasestorage.app',
+  messagingSenderId:'84057820207',
+  appId:'1:84057820207:web:75ad47c8ff5f46485ccada'
+};
+var _fbApp=null,_fbAuth=null,_fbDb=null,_fbUser=null,_fsUnsubscribe=null;
+
+function _fsDoc(){return _fbDb.collection('companies').doc('gama');}
+
+function _fsPush(){
+  if(!_fbDb||!_fbUser) return;
+  var trips=MEM||lsGet('gama_trips')||[];
+  _fsDoc().set({trips:trips,updatedAt:Date.now()},{merge:false}).catch(function(e){
+    console.warn('Firestore push error:',e);
+  });
+}
+
+function _fsPull(data){
+  if(!data||!data.trips) return;
+  var remote=data.trips;
+  var local=lsGet('gama_trips')||[];
+  var remoteIds=new Set(remote.map(function(t){return t.id;}));
+  local.forEach(function(t){if(!remoteIds.has(t.id)) remote.push(t);});
+  MEM=null;
+  lsSet('gama_trips',remote);
+  renderDash();
+  _syncStatus('\u2705 Firebase 即時同步中 · 所有裝置自動更新');
+}
+
+function _startFsSync(){
+  if(!_fbDb||!_fbUser) return;
+  if(_fsUnsubscribe) _fsUnsubscribe();
+  // 先拉一次現有資料
+  _fsDoc().get().then(function(doc){
+    if(doc.exists) _fsPull(doc.data());
+    else _fsPush(); // 空的，推上去
+  });
+  // 開啟即時監聽
+  _fsUnsubscribe=_fsDoc().onSnapshot(function(doc){
+    if(doc.exists&&doc.metadata.hasPendingWrites===false){
+      _fsPull(doc.data());
+    }
+  },function(err){
+    _syncStatus('\u26a0\ufe0f 同步錯誤：'+err.message);
+  });
+}
+
+function signInWithGoogle(){
+  if(!_fbAuth){toast('Firebase 尚未初始化');return;}
+  var provider=new firebase.auth.GoogleAuthProvider();
+  _fbAuth.signInWithPopup(provider).catch(function(err){
+    toast('Google 登入失敗：'+err.message);
+  });
+}
+
+function _initFirebase(){
+  if(typeof firebase==='undefined') return;
+  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  _fbApp=firebase.app();
+  _fbAuth=firebase.auth();
+  _fbDb=firebase.firestore();
+  _fbAuth.onAuthStateChanged(function(user){
+    _fbUser=user;
+    if(user){
+      localStorage.setItem(AUTH_KEY,user.displayName||user.email);
+      localStorage.setItem(AUTH_ROLE_KEY,'admin');
+      var ls=document.getElementById('ls');
+      if(ls&&ls.style.display!=='none'){
+        ls.style.transition='opacity .3s';ls.style.opacity='0';
+        setTimeout(function(){
+          ls.style.display='none';
+          updateAdminBtn();
+          renderDash();
+          _startFsSync();
+        },300);
+      } else {
+        // 已登入狀態重新整理頁面時
+        _startFsSync();
+        renderDash();
+      }
+    }
+  });
+}
+
 // iOS Safari 不支援 beforeinstallprompt，改顯示手動引導
 (function(){
   var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
@@ -4522,5 +4634,10 @@ function installPWA(){
   }
 })();
 </script>
+<!-- Firebase SDK (compat mode) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>_initFirebase();</script>
 </body>
 </html>
