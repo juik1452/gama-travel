@@ -4585,9 +4585,30 @@ function _startFsSync(){
 function signInWithGoogle(){
   if(!_fbAuth){toast('Firebase 尚未初始化');return;}
   var provider=new firebase.auth.GoogleAuthProvider();
-  _fbAuth.signInWithPopup(provider).catch(function(err){
+  provider.setCustomParameters({prompt:'select_account'});
+  // 改用 redirect（比 popup 更穩定，避免被瀏覽器阻擋）
+  _fbAuth.signInWithRedirect(provider).catch(function(err){
     toast('Google 登入失敗：'+err.message);
   });
+}
+
+function _fbLoginSuccess(user){
+  _fbUser=user;
+  localStorage.setItem(AUTH_KEY,user.displayName||user.email);
+  localStorage.setItem(AUTH_ROLE_KEY,'admin');
+  var ls=document.getElementById('ls');
+  if(ls&&ls.style.display!=='none'){
+    ls.style.transition='opacity .3s';ls.style.opacity='0';
+    setTimeout(function(){
+      ls.style.display='none';
+      updateAdminBtn();
+      renderDash();
+      _startFsSync();
+    },300);
+  } else {
+    _startFsSync();
+    renderDash();
+  }
 }
 
 function _initFirebase(){
@@ -4596,26 +4617,15 @@ function _initFirebase(){
   _fbApp=firebase.app();
   _fbAuth=firebase.auth();
   _fbDb=firebase.firestore();
+  // 處理 redirect 登入回傳結果
+  _fbAuth.getRedirectResult().then(function(result){
+    if(result&&result.user) _fbLoginSuccess(result.user);
+  }).catch(function(err){
+    if(err.code!=='auth/no-auth-event') console.warn('Redirect auth error:',err.message);
+  });
+  // 監聽登入狀態（含已登入的 session）
   _fbAuth.onAuthStateChanged(function(user){
-    _fbUser=user;
-    if(user){
-      localStorage.setItem(AUTH_KEY,user.displayName||user.email);
-      localStorage.setItem(AUTH_ROLE_KEY,'admin');
-      var ls=document.getElementById('ls');
-      if(ls&&ls.style.display!=='none'){
-        ls.style.transition='opacity .3s';ls.style.opacity='0';
-        setTimeout(function(){
-          ls.style.display='none';
-          updateAdminBtn();
-          renderDash();
-          _startFsSync();
-        },300);
-      } else {
-        // 已登入狀態重新整理頁面時
-        _startFsSync();
-        renderDash();
-      }
-    }
+    if(user) _fbLoginSuccess(user);
   });
 }
 
