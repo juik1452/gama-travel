@@ -350,23 +350,26 @@ a{color:inherit;text-decoration:none}
 @media(max-width:640px){.tab-hint{display:block}}
 
 /* ── WEATHER / LOCAL TIME CARD */
-.wt-card{border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.28)}
+.wt-card{border-radius:16px;margin-bottom:14px;overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,0.18);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.18)}
 .wt-main{padding:18px 18px 14px;position:relative}
 .wt-top-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
-.wt-cond{font-size:14px;font-weight:700;color:rgba(255,255,255,0.95);display:flex;align-items:center;gap:6px}
+.wt-cond{font-size:14px;font-weight:700;color:rgba(255,255,255,0.92);display:flex;align-items:center;gap:6px}
 .wt-cond-icon{font-size:18px;line-height:1}
 .wt-time-block{text-align:right}
-.wt-time{font-size:22px;font-weight:800;color:#fff;line-height:1;letter-spacing:0.03em}
-.wt-date{font-size:11px;color:rgba(255,255,255,0.78);margin-top:3px}
+.wt-time{font-size:32px;font-weight:700;color:#fff;line-height:1;letter-spacing:0.02em}
+.wt-date{font-size:11px;color:rgba(255,255,255,0.70);margin-top:4px}
 .wt-temp-big{font-size:62px;font-weight:200;color:#fff;line-height:1;margin:6px 0 2px}
 .wt-bot-row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px}
-.wt-hilo{font-size:13px;color:rgba(255,255,255,0.82);font-weight:500}
-.wt-city{font-size:13px;color:rgba(255,255,255,0.82);font-weight:500;text-align:right}
-.wt-forecast{background:rgba(0,0,0,0.22);padding:10px 16px;display:flex}
+.wt-hilo{font-size:13px;color:rgba(255,255,255,0.78);font-weight:500}
+.wt-city{font-size:13px;color:rgba(255,255,255,0.78);font-weight:500;text-align:right}
+.wt-forecast{background:rgba(0,0,0,0.15);padding:10px 16px;display:flex}
 .wt-fc-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
-.wt-fc-lbl{font-size:10px;color:rgba(255,255,255,0.65);font-weight:700;letter-spacing:.05em}
+.wt-fc-lbl{font-size:10px;color:rgba(255,255,255,0.60);font-weight:700;letter-spacing:.05em}
 .wt-fc-ico{font-size:20px;line-height:1}
-.wt-fc-t{font-size:10px;color:rgba(255,255,255,0.82)}
+.wt-fc-t{font-size:10px;color:rgba(255,255,255,0.75)}
 .wt-no-data{padding:18px;background:rgba(255,255,255,0.12);font-size:13px;color:rgba(255,255,255,0.6);text-align:center;border-radius:16px;margin-bottom:14px}
 
 /* ═══ LOGIN SCREEN ═══ */
@@ -1879,14 +1882,14 @@ function renderWeatherTime(trip){
   // Weather code → gradient + icon
   function _wtInfo(code){
     var c=parseInt(code)||113;
-    if(c===113) return {icon:'☀️',grad:'linear-gradient(135deg,#f97316 0%,#ef4444 100%)'};
-    if(c===116) return {icon:'⛅',grad:'linear-gradient(135deg,#f59e0b 0%,#f97316 100%)'};
-    if(c===119||c===122) return {icon:'☁️',grad:'linear-gradient(135deg,#6366f1 0%,#4338ca 100%)'};
-    if(c===143||c===248||c===260) return {icon:'🌫️',grad:'linear-gradient(135deg,#78716c 0%,#57534e 100%)'};
-    if(c===200||c===386||c===389||c===392||c===395) return {icon:'⛈️',grad:'linear-gradient(135deg,#1e293b 0%,#374151 100%)'};
-    if((c>=227&&c<=338)||(c===368||c===371||c===374||c===377)) return {icon:'❄️',grad:'linear-gradient(135deg,#60a5fa 0%,#3b82f6 100%)'};
-    if(c>=176) return {icon:'🌧️',grad:'linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)'};
-    return {icon:'🌤️',grad:'linear-gradient(135deg,#f59e0b 0%,#ef4444 100%)'};
+    if(c===113) return {icon:'☀️',grad:'linear-gradient(135deg,rgba(234,120,56,0.68) 0%,rgba(220,80,70,0.68) 100%)'};
+    if(c===116) return {icon:'⛅',grad:'linear-gradient(135deg,rgba(220,150,50,0.65) 0%,rgba(210,100,60,0.65) 100%)'};
+    if(c===119||c===122) return {icon:'☁️',grad:'linear-gradient(135deg,rgba(110,115,200,0.65) 0%,rgba(80,85,170,0.68) 100%)'};
+    if(c===143||c===248||c===260) return {icon:'🌫️',grad:'linear-gradient(135deg,rgba(130,130,145,0.62) 0%,rgba(95,100,115,0.65) 100%)'};
+    if(c===200||c===386||c===389||c===392||c===395) return {icon:'⛈️',grad:'linear-gradient(135deg,rgba(30,40,65,0.78) 0%,rgba(50,60,85,0.78) 100%)'};
+    if((c>=227&&c<=338)||(c===368||c===371||c===374||c===377)) return {icon:'❄️',grad:'linear-gradient(135deg,rgba(110,165,230,0.65) 0%,rgba(80,130,210,0.68) 100%)'};
+    if(c>=176) return {icon:'🌧️',grad:'linear-gradient(135deg,rgba(85,90,200,0.68) 0%,rgba(120,75,200,0.68) 100%)'};
+    return {icon:'🌤️',grad:'linear-gradient(135deg,rgba(220,150,50,0.65) 0%,rgba(210,80,65,0.65) 100%)'};
   }
   function _wkDay(dateStr){
     var days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
