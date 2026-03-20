@@ -1619,7 +1619,13 @@ function addOrUpdateTrip(t){
   if(idx>=0)trips[idx]=t; else trips.unshift(t);
   saveTrips();
 }
-function removeTrip(id){MEM=getTrips().filter(function(t){return t.id!==id;});saveTrips();}
+function removeTrip(id){
+  // 記錄刪除墓碑，讓其他裝置知道此行程已被刪除
+  var dels=JSON.parse(localStorage.getItem('gama_deleted_ids')||'[]');
+  if(dels.indexOf(id)<0){dels.push(id);localStorage.setItem('gama_deleted_ids',JSON.stringify(dels));}
+  MEM=getTrips().filter(function(t){return t.id!==id;});
+  saveTrips();
+}
 
 // ═══════════════════════════════════════
 // SCREEN ROUTING
@@ -4555,10 +4561,14 @@ var _deviceId=(function(){
 
 function _fsDoc(){return _fbDb.collection('companies').doc('gama').collection('sync').doc('data');}
 
+function _getDeletedIds(){return new Set(JSON.parse(localStorage.getItem('gama_deleted_ids')||'[]'));}
+function _saveDeletedIds(set){localStorage.setItem('gama_deleted_ids',JSON.stringify([].concat(Array.from?Array.from(set):[].slice.call(set))));}
+
 function _fsPush(){
   if(!_fbDb||!_fbUser) return;
   var trips=MEM||lsGet('gama_trips')||[];
-  _fsDoc().set({trips:trips,updatedAt:Date.now(),deviceId:_deviceId}).then(function(){
+  var deletedIds=[].concat(Array.from?Array.from(_getDeletedIds()):[].slice.call(_getDeletedIds()));
+  _fsDoc().set({trips:trips,deletedIds:deletedIds,updatedAt:Date.now(),deviceId:_deviceId}).then(function(){
     _syncStatus('✅ Firebase 即時同步中 · 所有裝置自動更新');
   }).catch(function(e){
     console.warn('Firestore push error:',e);
@@ -4568,38 +4578,62 @@ function _fsPush(){
 
 function _fsPull(data){
   if(!data||!data.trips) return;
-  // 沒有 deviceId（舊格式）或是自己推的資料 → 跳過，本機永遠是最新
-  if(!data.deviceId||data.deviceId===_deviceId) return;
-  // 只從其他裝置接收本機沒有的行程
   var remote=data.trips;
+  var remoteTombstones=new Set(data.deletedIds||[]);
   var local=lsGet('gama_trips')||[];
-  var localIds=new Set(local.map(function(t){return t.id;}));
-  var newFromRemote=remote.filter(function(t){return !localIds.has(t.id);});
-  if(newFromRemote.length===0) return;
-  var merged=local.concat(newFromRemote);
+  var localTombstones=_getDeletedIds();
+  var changed=false;
+
+  // 套用遠端墓碑：把遠端已刪除的行程從本機移除
+  remoteTombstones.forEach(function(id){localTombstones.add(id);});
+  var afterTombstone=local.filter(function(t){
+    if(remoteTombstones.has(t.id)){changed=true;return false;}
+    return true;
+  });
+
+  // 加入遠端有、本機沒有、且未被刪除的新行程
+  var localIds=new Set(afterTombstone.map(function(t){return t.id;}));
+  var newTrips=remote.filter(function(t){return !localIds.has(t.id)&&!localTombstones.has(t.id);});
+  if(newTrips.length>0) changed=true;
+
+  if(!changed) return;
+  _saveDeletedIds(localTombstones);
+  var merged=afterTombstone.concat(newTrips);
   MEM=null;
   lsSet('gama_trips',merged);
   renderDash();
-  _syncStatus('\u2705 Firebase 即時同步中 · 所有裝置自動更新');
+  _syncStatus('✅ Firebase 即時同步中 · 所有裝置自動更新');
 }
 
 var _fsSyncing=false;
 function _startFsSync(){
   if(!_fbDb||!_fbUser||_fsSyncing) return;
   _fsSyncing=true;
-  // Firebase 接管：停止 GitHub Gist 輪詢，避免舊資料覆蓋本機
+  // Firebase 接管：停止 GitHub Gist 輪詢
   if(_syncTimer){clearInterval(_syncTimer);_syncTimer=null;}
   _ghToken=''; _ghGistId='';
   if(_fsUnsubscribe){_fsUnsubscribe();_fsUnsubscribe=null;}
-  _fsUnsubscribe=_fsDoc().onSnapshot(function(doc){
-    if(!doc.exists||doc.metadata.hasPendingWrites) return;
-    _fsPull(doc.data());
-    _syncStatus('\u2705 Firebase 即時同步中 · 所有裝置自動更新');
-  },function(err){
-    _syncStatus('\u26a0\ufe0f 同步錯誤：'+err.message);
+
+  function _startListener(){
+    _fsUnsubscribe=_fsDoc().onSnapshot(function(doc){
+      if(!doc.exists||doc.metadata.hasPendingWrites) return;
+      if(doc.data().deviceId===_deviceId) return; // 自己推的，跳過
+      _fsPull(doc.data());
+    },function(err){
+      _syncStatus('⚠️ 同步錯誤：'+err.message);
+    });
+    _fsSyncing=false;
+  }
+
+  // 先 pull（取得伺服器資料，新裝置會拿到所有行程）
+  _fsDoc().get().then(function(doc){
+    if(doc.exists) _fsPull(doc.data());
+    _fsPush(); // 推送本機狀態（含墓碑）到伺服器
+    _startListener();
+  }).catch(function(){
+    _fsPush();
+    _startListener();
   });
-  // 推送本機資料讓其他裝置能同步（自己不受影響）
-  _fsPush();
 }
 
 function signInWithGoogle(){
