@@ -1910,17 +1910,22 @@ function renderWeatherTime(trip){
   var weatherCity=dest||arrAirport||'';
   _stopClock('main');
 
-  // Weather code → gradient + icon
+  // WMO weather code → gradient + icon (Open-Meteo format)
   function _wtInfo(code){
-    var c=parseInt(code)||113;
-    if(c===113) return {icon:'☀️',grad:'linear-gradient(135deg,rgba(234,120,56,0.68) 0%,rgba(220,80,70,0.68) 100%)'};
-    if(c===116) return {icon:'⛅',grad:'linear-gradient(135deg,rgba(220,150,50,0.65) 0%,rgba(210,100,60,0.65) 100%)'};
-    if(c===119||c===122) return {icon:'☁️',grad:'linear-gradient(135deg,rgba(110,115,200,0.65) 0%,rgba(80,85,170,0.68) 100%)'};
-    if(c===143||c===248||c===260) return {icon:'🌫️',grad:'linear-gradient(135deg,rgba(130,130,145,0.62) 0%,rgba(95,100,115,0.65) 100%)'};
-    if(c===200||c===386||c===389||c===392||c===395) return {icon:'⛈️',grad:'linear-gradient(135deg,rgba(30,40,65,0.78) 0%,rgba(50,60,85,0.78) 100%)'};
-    if((c>=227&&c<=338)||(c===368||c===371||c===374||c===377)) return {icon:'❄️',grad:'linear-gradient(135deg,rgba(110,165,230,0.65) 0%,rgba(80,130,210,0.68) 100%)'};
-    if(c>=176) return {icon:'🌧️',grad:'linear-gradient(135deg,rgba(85,90,200,0.68) 0%,rgba(120,75,200,0.68) 100%)'};
+    var c=parseInt(code)||0;
+    if(c===0) return {icon:'☀️',grad:'linear-gradient(135deg,rgba(234,120,56,0.68) 0%,rgba(220,80,70,0.68) 100%)'};
+    if(c===1||c===2) return {icon:'⛅',grad:'linear-gradient(135deg,rgba(220,150,50,0.65) 0%,rgba(210,100,60,0.65) 100%)'};
+    if(c===3) return {icon:'☁️',grad:'linear-gradient(135deg,rgba(110,115,200,0.65) 0%,rgba(80,85,170,0.68) 100%)'};
+    if(c===45||c===48) return {icon:'🌫️',grad:'linear-gradient(135deg,rgba(130,130,145,0.62) 0%,rgba(95,100,115,0.65) 100%)'};
+    if(c>=95) return {icon:'⛈️',grad:'linear-gradient(135deg,rgba(30,40,65,0.78) 0%,rgba(50,60,85,0.78) 100%)'};
+    if((c>=71&&c<=77)||c===85||c===86) return {icon:'❄️',grad:'linear-gradient(135deg,rgba(110,165,230,0.65) 0%,rgba(80,130,210,0.68) 100%)'};
+    if(c>=51) return {icon:'🌧️',grad:'linear-gradient(135deg,rgba(85,90,200,0.68) 0%,rgba(120,75,200,0.68) 100%)'};
     return {icon:'🌤️',grad:'linear-gradient(135deg,rgba(220,150,50,0.65) 0%,rgba(210,80,65,0.65) 100%)'};
+  }
+  function _wmoDesc(code){
+    var c=parseInt(code)||0;
+    var m={0:'晴天',1:'晴時多雲',2:'多雲',3:'陰天',45:'霧',48:'霧',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',77:'雪粒',80:'陣雨',81:'陣雨',82:'豪雨',85:'陣雪',86:'大陣雪',95:'雷陣雨',96:'雷陣雨',99:'雷陣雨'};
+    return m[c]||'—';
   }
   function _wkDay(dateStr){
     var days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
@@ -1969,7 +1974,7 @@ function renderWeatherTime(trip){
   }
 
   // Initial render (no weather data yet)
-  _buildCard(_wtInfo(113),null,'載入天氣中…',null,null,null);
+  _buildCard(_wtInfo(0),null,'載入天氣中…',null,null,null);
 
   // Start live clock
   if(tz){
@@ -1987,29 +1992,38 @@ function renderWeatherTime(trip){
     _wtClocks['main']=setInterval(updateClock,1000);
   }
 
-  // Fetch weather
+  // Fetch weather via Open-Meteo (free, no API key, CORS supported)
   var city=weatherCity||destShort;
-  fetch('https://wttr.in/'+encodeURIComponent(city)+'?format=j1')
-    .then(function(r){return r.ok?r.json():Promise.reject(r.status);})
+  fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=en&format=json')
+    .then(function(r){return r.json();})
+    .then(function(geo){
+      var loc=geo.results&&geo.results[0];
+      if(!loc) throw new Error('city not found');
+      var lat=loc.latitude.toFixed(4),lon=loc.longitude.toFixed(4);
+      return fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+
+        '&current=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min'+
+        '&timezone=auto&forecast_days=4');
+    })
+    .then(function(r){return r.json();})
     .then(function(data){
-      var d2=data.data||data;
-      var cur=d2.current_condition&&d2.current_condition[0];
-      if(!cur){_buildCard(_wtInfo(113),null,'無資料',null,null,null);return;}
-      var code=cur.weatherCode||'113';
+      var cur=data.current,daily=data.daily;
+      if(!cur) throw new Error('no data');
+      var code=cur.weathercode||0;
       var info=_wtInfo(code);
-      var tempC=cur.temp_C;
-      var desc=(cur.lang_zh&&cur.lang_zh[0]&&cur.lang_zh[0].value)||(cur.weatherDesc&&cur.weatherDesc[0]&&cur.weatherDesc[0].value)||'';
-      var wdays=d2.weather||[];
-      var hiC=wdays[0]?wdays[0].maxtempC:null;
-      var loC=wdays[0]?wdays[0].mintempC:null;
-      var forecast=wdays.slice(0,4).map(function(w){
-        var hCode=w.hourly&&w.hourly[4]?w.hourly[4].weatherCode:code;
-        return {date:w.date,icon:_wtInfo(hCode).icon,hi:w.maxtempC,lo:w.mintempC};
-      });
-      _buildCard(info,tempC,desc,hiC,loC,forecast);
+      var tempC=Math.round(cur.temperature_2m);
+      var hiC=daily&&daily.temperature_2m_max?Math.round(daily.temperature_2m_max[0]):null;
+      var loC=daily&&daily.temperature_2m_min?Math.round(daily.temperature_2m_min[0]):null;
+      var forecast=[];
+      if(daily&&daily.time){
+        for(var i=1;i<Math.min(4,daily.time.length);i++){
+          forecast.push({date:daily.time[i],icon:_wtInfo(daily.weathercode[i]).icon,
+            hi:Math.round(daily.temperature_2m_max[i]),lo:Math.round(daily.temperature_2m_min[i])});
+        }
+      }
+      _buildCard(info,tempC,_wmoDesc(code),hiC,loC,forecast);
     })
     .catch(function(){
-      _buildCard(_wtInfo(113),null,'暫時無法取得',null,null,null);
+      _buildCard(_wtInfo(0),null,'暫時無法取得',null,null,null);
     });
 }
 
