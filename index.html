@@ -4966,7 +4966,36 @@ function getAllowedEmails(){
   localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(_DEFAULT_ALLOWED_EMAILS));
   return _DEFAULT_ALLOWED_EMAILS.slice();
 }
-function saveAllowedEmails(arr){localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(arr));}
+function _configDoc(){return _fbDb.collection('companies').doc('gama').collection('config').doc('settings');}
+function saveAllowedEmails(arr){
+  localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(arr));
+  // 同步到 Firestore，讓所有裝置即時更新
+  if(_fbDb&&_fbUser){
+    _configDoc().set({allowedEmails:arr,updatedAt:Date.now()},{merge:true})
+      .catch(function(e){console.warn('whitelist push error:',e);});
+  }
+}
+function _syncAllowedEmailsFromFs(){
+  if(!_fbDb||!_fbUser) return;
+  _configDoc().get().then(function(doc){
+    if(doc.exists&&doc.data().allowedEmails){
+      var remote=doc.data().allowedEmails;
+      localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(remote));
+      // 若設定頁已開啟，重新渲染
+      var amBody=document.getElementById('am-body');
+      if(amBody&&amBody.innerHTML.indexOf('白名單')>=0) renderAccountMgmt();
+    }
+  }).catch(function(e){console.warn('whitelist pull error:',e);});
+  // 監聽即時變更（其他裝置新增/移除時自動更新）
+  _configDoc().onSnapshot(function(doc){
+    if(!doc.exists||doc.metadata.hasPendingWrites) return;
+    if(!doc.data().allowedEmails) return;
+    var remote=doc.data().allowedEmails;
+    localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(remote));
+    var amBody=document.getElementById('am-body');
+    if(amBody&&amBody.innerHTML.indexOf('白名單')>=0) renderAccountMgmt();
+  });
+}
 function _isAllowedEmail(email){
   if(!email) return false;
   var e=email.toLowerCase().trim();
@@ -5049,6 +5078,9 @@ function _startFsSync(){
     _fsPush();
     _startListener();
   });
+
+  // 同步白名單（從 Firestore 拉取最新名單並監聽變更）
+  _syncAllowedEmailsFromFs();
 }
 
 function signInWithGoogle(){
