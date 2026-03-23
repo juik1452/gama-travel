@@ -486,14 +486,16 @@ select.inp option{background:#3a6080;color:#fff}
 .btn-outline:active,.btn-solid:active{opacity:.8}
 
 /* ── DASHBOARD STATS ROW */
-.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px}
 .stat-card{background:rgba(255,255,255,0.12);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:1px solid rgba(255,255,255,0.18);border-radius:14px;
-  padding:12px 10px;text-align:center}
-.stat-num{font-size:26px;font-weight:900;color:#fff;line-height:1}
+  padding:12px 10px;text-align:center;transition:background .18s,border-color .18s,transform .12s}
+.stat-card:active{transform:scale(0.96)}
+.stat-num{font-size:22px;font-weight:900;color:#fff;line-height:1}
 .stat-lbl{font-size:10px;color:rgba(255,255,255,0.70);font-weight:700;text-transform:uppercase;
   letter-spacing:.06em;margin-top:4px}
-.stat-card.stat-hi{background:rgba(255,255,255,0.20);border-color:rgba(255,255,255,0.30)}
+.stat-card.stat-hi{background:rgba(255,255,255,0.18);border-color:rgba(255,255,255,0.28)}
+.stat-card.stat-sel{background:rgba(255,255,255,0.28);border-color:rgba(255,255,255,0.55);box-shadow:0 0 0 2px rgba(255,255,255,0.25)}
 
 /* ── HERO REDESIGN */
 .hero{background:rgba(255,255,255,0.16);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
@@ -558,7 +560,9 @@ select.inp option{background:#3a6080;color:#fff}
 /* ── RESPONSIVE tweaks */
 @media(max-width:360px){
   .tc-dest{font-size:16px}
-  .stat-num{font-size:22px}
+  .stat-num{font-size:18px}
+  .stat-lbl{font-size:9px}
+  .stats-row{gap:5px}
 }
 @media(min-width:640px){
   #sd .scr-content{max-width:560px;margin:0 auto}
@@ -1662,24 +1666,46 @@ function _autoStatus(trip){
   return 'active';                                   // 超過30天 → 進行中
 }
 
+var _dashFilter='all'; // 'all' | 'upcoming' | 'active' | 'past'
+function setDashFilter(f){_dashFilter=f;renderDash();}
+
 function renderDash(){
   var trips=getTrips(),el=document.getElementById('dash');
   var upcoming=trips.filter(function(t){return _autoStatus(t)==='upcoming';}).length;
   var active=trips.filter(function(t){return _autoStatus(t)==='active';}).length;
   var past=trips.filter(function(t){return _autoStatus(t)==='past';}).length;
+  var total=trips.length;
+  // 篩選
+  var filtered=_dashFilter==='all'?trips:trips.filter(function(t){return _autoStatus(t)===_dashFilter;});
+
+  function _sc(filter,num,lbl,hi){
+    var sel=_dashFilter===filter;
+    return '<div class="stat-card'+(hi&&num>0?' stat-hi':'')+(sel?' stat-sel':'')+'" onclick="setDashFilter(\''+filter+'\')" style="cursor:pointer">'+
+      '<div class="stat-num">'+num+'</div><div class="stat-lbl">'+lbl+'</div>'+
+      (sel?'<div style="height:3px;background:#fff;border-radius:2px;margin-top:6px;opacity:0.8"></div>':'<div style="height:3px;margin-top:6px"></div>')+
+    '</div>';
+  }
+
   // Stats row
   var h='<div class="stats-row">'+
-    '<div class="stat-card'+(upcoming>0?' stat-hi':'')+'"><div class="stat-num">'+upcoming+'</div><div class="stat-lbl">即將出發</div></div>'+
-    '<div class="stat-card'+(active>0?' stat-hi':'')+'"><div class="stat-num">'+active+'</div><div class="stat-lbl">進行中</div></div>'+
-    '<div class="stat-card"><div class="stat-num">'+past+'</div><div class="stat-lbl">已完成</div></div>'+
+    _sc('upcoming',upcoming,'即將出發',true)+
+    _sc('active',active,'進行中',true)+
+    _sc('past',past,'已完成',false)+
+    _sc('all',total,'全部行程',false)+
   '</div>';
+
   if(!trips.length){
     h+='<div class="empty"><div class="empty-ico">✈️</div><h3>尚無出差紀錄</h3><p>點擊下方按鈕上傳機票<br>即可建立第一筆出差行程</p>'+
       '<button class="empty-cta" onclick="go(\'su\')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 上傳機票</button></div>';
   } else {
-    h+='<div class="sec-title">出差行程</div>';
+    var filterLabel=_dashFilter==='upcoming'?'即將出發':_dashFilter==='active'?'進行中':_dashFilter==='past'?'已完成':'全部行程';
+    h+='<div class="sec-title">'+filterLabel+
+      (_dashFilter!=='all'?'<span style="font-size:11px;font-weight:400;opacity:.6;margin-left:6px">共 '+filtered.length+' 筆</span>':'')+'</div>';
+    if(filtered.length===0){
+      h+='<div style="text-align:center;padding:32px 16px;color:rgba(255,255,255,0.4);font-size:14px">此分類目前沒有行程</div>';
+    }
   }
-  trips.forEach(function(trip){
+  filtered.forEach(function(trip){
     var out=trip.segs.find(function(s){return s.dir==='out';});
     var inb=[].concat(trip.segs).reverse().find(function(s){return s.dir==='in';});
     var names=trip.passengers.map(function(p){return p.name;}).join('、');
