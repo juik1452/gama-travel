@@ -1657,9 +1657,9 @@ function _autoStatus(trip){
   var depDate=outSegs.length?new Date(outSegs[0].dd):null;
   var retDate=inSegs.length?new Date(inSegs[inSegs.length-1].ad||inSegs[inSegs.length-1].dd):null;
   if(!depDate) return 'active';
-  if(retDate&&retDate<today) return 'past';          // 已回程 → 已完成
-  if(depDate>=today&&depDate<=in30) return 'upcoming'; // 30天內出發 → 即將出發
-  return 'active';                                   // 超過30天或正在旅途 → 進行中
+  if(depDate<today) return 'past';                   // 已出發 → 已完成
+  if(depDate<=in30) return 'upcoming';               // 30天內出發 → 即將出發
+  return 'active';                                   // 超過30天 → 進行中
 }
 
 function renderDash(){
