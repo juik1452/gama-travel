@@ -4904,6 +4904,18 @@ var _deviceId=(function(){
   return id;
 })();
 
+// ── Gmail 白名單：只有以下帳號可以登入 ──────────────────────
+var ALLOWED_EMAILS=[
+  'reneechiu@gama.com.tw',   // 請替換為實際允許的 Gmail
+  'example@gmail.com',        // 可繼續新增
+];
+function _isAllowedEmail(email){
+  if(!email) return false;
+  var e=email.toLowerCase().trim();
+  return ALLOWED_EMAILS.some(function(a){return a.toLowerCase().trim()===e;});
+}
+// ────────────────────────────────────────────────────────────
+
 function _fsDoc(){return _fbDb.collection('companies').doc('gama').collection('sync').doc('data');}
 
 function _getDeletedIds(){return new Set(JSON.parse(localStorage.getItem('gama_deleted_ids')||'[]'));}
@@ -5005,6 +5017,12 @@ function signInWithGoogle(){
 
 function _fbLoginSuccess(user){
   if(!user) return;
+  // 白名單檢查
+  if(!_isAllowedEmail(user.email)){
+    _fbAuth.signOut();
+    toast('⛔ 此帳號（'+user.email+'）無存取權限，請聯繫管理員');
+    return;
+  }
   _fbUser=user;
   localStorage.setItem(AUTH_KEY,user.displayName||user.email);
   localStorage.setItem(AUTH_ROLE_KEY,'admin');
