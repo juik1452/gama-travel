@@ -4967,6 +4967,7 @@ function getAllowedEmails(){
   return _DEFAULT_ALLOWED_EMAILS.slice();
 }
 function _configDoc(){return _fbDb.collection('companies').doc('gama').collection('config').doc('settings');}
+var _loginPending=false; // 防止 onAuthStateChanged + getRedirectResult 同時觸發雙重登入
 function saveAllowedEmails(arr){
   localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(arr));
   if(_fbDb&&_fbUser){
@@ -5124,11 +5125,14 @@ function signInWithGoogle(){
 
 function _fbLoginSuccess(user){
   if(!user) return;
-  // 防止 onAuthStateChanged + getRedirectResult 雙重觸發
+  // 防止重複觸發（_loginPending 用同步 flag，解決非同步 guard 失效問題）
+  if(_loginPending) return;
   if(_fbUser&&_fbUser.uid===user.uid) return;
+  _loginPending=true;
 
-  // ── 內部：白名單確認後的真正登入邏輯 ──
+  // ── 白名單確認後的真正登入邏輯 ──
   function _doLogin(){
+    _loginPending=false; // 釋放 flag
     if(!_isAllowedEmail(user.email)){
       _fbAuth.signOut();
       setTimeout(function(){
@@ -5161,23 +5165,24 @@ function _fbLoginSuccess(user){
   }
 
   // ── 先從 Firestore 拉取最新白名單，再做驗證 ──
-  // 優先讀 sync doc（與行程同一文件，一定可存取），再查 config doc 作備援
-  if(_fbDb){
+  // 用單一 helper 確保最終只呼叫一次 _doLogin()
+  function _fetchWhitelistThenLogin(){
     _fsDoc().get().then(function(doc){
+      // 優先：sync doc（行程同一文件，一定可存取）
       if(doc.exists&&doc.data().allowedEmails&&doc.data().allowedEmails.length>0){
         localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(doc.data().allowedEmails));
         _doLogin();
       } else {
-        // sync doc 沒有白名單 → 查 config doc
+        // 備援：config doc
         _configDoc().get().then(function(cdoc){
           if(cdoc.exists&&cdoc.data().allowedEmails&&cdoc.data().allowedEmails.length>0){
             localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(cdoc.data().allowedEmails));
           }
           _doLogin();
-        }).catch(function(){_doLogin();});
+        }).catch(function(){_doLogin();}); // 都讀不到 → 用 localStorage 預設值
       }
     }).catch(function(){
-      // Firestore 完全不可用時，嘗試 config doc 備援
+      // sync doc 失敗 → 試 config doc
       _configDoc().get().then(function(cdoc){
         if(cdoc.exists&&cdoc.data().allowedEmails&&cdoc.data().allowedEmails.length>0){
           localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(cdoc.data().allowedEmails));
@@ -5185,9 +5190,10 @@ function _fbLoginSuccess(user){
         _doLogin();
       }).catch(function(){_doLogin();});
     });
-  } else {
-    _doLogin();
   }
+
+  if(_fbDb) _fetchWhitelistThenLogin();
+  else _doLogin();
 }
 
 function _initFirebase(){
