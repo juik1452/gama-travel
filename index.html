@@ -5098,28 +5098,28 @@ function signInWithGoogle(){
   if(!_fbAuth){try{_initFirebase();}catch(e){} if(!_fbAuth){toast('⚠️ 請重新整理頁面後再試');return;}}
   var provider=new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt:'select_account'});
-  // 行動裝置改用 redirect（iOS/Android 常封鎖 popup）
-  var isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  if(isMobile){
-    _fbAuth.signInWithRedirect(provider).catch(function(err){
-      toast('⚠️ 登入失敗：'+err.message);
-    });
-    return;
-  }
+  // 所有裝置先用 Popup；若被封鎖自動改 Redirect（更相容各瀏覽器）
   _fbAuth.signInWithPopup(provider)
     .then(function(result){
-      // onAuthStateChanged 也會觸發，這裡做備援
       if(result&&result.user) _fbLoginSuccess(result.user);
     })
     .catch(function(err){
-      var msg={
-        'auth/popup-blocked':'彈出視窗被封鎖，請在瀏覽器允許彈出視窗後再試',
-        'auth/popup-closed-by-user':'登入視窗已關閉，請重新點擊登入',
-        'auth/unauthorized-domain':'此網域未授權（'+location.hostname+'）',
-        'auth/cancelled-popup-request':'已取消，請重新點擊登入',
-        'auth/internal-error':'內部錯誤，請重新整理後再試'
-      };
-      toast('⚠️ '+(msg[err.code]||err.code+' '+err.message));
+      if(err.code==='auth/popup-blocked'||err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request'){
+        // Popup 被封鎖 → 改用 Redirect（適用 iOS Safari 等瀏覽器）
+        toast('🔄 正在跳轉 Google 登入頁面…');
+        setTimeout(function(){
+          _fbAuth.signInWithRedirect(provider).catch(function(e){
+            toast('⚠️ 登入失敗：'+e.code+' 請重新整理後再試');
+          });
+        },800);
+      } else {
+        var msg={
+          'auth/unauthorized-domain':'此網域未授權（'+location.hostname+'），請聯繫管理員',
+          'auth/internal-error':'內部錯誤，請重新整理後再試',
+          'auth/network-request-failed':'網路連線異常，請確認後再試'
+        };
+        toast('⚠️ '+(msg[err.code]||err.code+' '+err.message));
+      }
     });
 }
 
