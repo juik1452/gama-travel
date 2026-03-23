@@ -2114,6 +2114,9 @@ function buildVisaEn(p,trip){
   var hotel=trip.hotel||{};
   var hotelName=(hotel.name&&hotel.name!=='尚未設定')?hotel.name:'';
   var nights=hotel.nights?hotel.nights+' NIGHT'+(hotel.nights>1?'S':''):'';
+  var hotelAddr=hotel.addr||'';
+  var hotelPhone=hotel.phone||'';
+  var hotelRef=hotel.ref||'';
   var dobFmt=emp.dob?fmtExpEn(emp.dob):'';
   return [
     '── PERSONAL INFORMATION ─────────────────────────────',
@@ -2157,9 +2160,11 @@ function buildVisaEn(p,trip){
     'OUTBOUND FLIGHT NO.         : '+(inb?inb.fl+' ('+inb.dd+')':''),
     'DURATION OF STAY            : '+nights,
     'ACCOMMODATION NAME          : '+hotelName,
-    'ACCOMMODATION ADDRESS       : ',
+    'ACCOMMODATION ADDRESS       : '+hotelAddr,
+    'ACCOMMODATION PHONE         : '+hotelPhone,
     'ACCOMMODATION CHECK-IN      : '+(hotel.cin||''),
     'ACCOMMODATION CHECK-OUT     : '+(hotel.cout||''),
+    'ACCOMMODATION BOOKING REF   : '+hotelRef,
     'FUNDS AVAILABLE (USD)       : ',
     'PREVIOUS VISITS             : ',
     'TRAVEL INSURANCE            : ',
@@ -2306,7 +2311,7 @@ function _hcNormDate(s){
 // 從原始文字萃取訂房確認單的欄位
 function parseHotelConfirmation(text){
   var t=(text||'').replace(/\r/g,'\n');
-  var r={name:'',cin:'',cout:'',nights:0,price:0,ref:'',currency:'TWD'};
+  var r={name:'',cin:'',cout:'',nights:0,price:0,ref:'',currency:'TWD',addr:'',phone:''};
 
   // 日期 pattern（支援多種格式）
   var DR='(\\d{4}-\\d{2}-\\d{2}|\\d{1,2}[\\/ ](?:[A-Za-z]{3,9})[\\/ ]\\d{2,4}|[A-Za-z]{3,9}[\\/ ,]\\s*\\d{1,2},?\\s*\\d{4}|\\d{4}年\\d{1,2}月\\d{1,2}日|\\d{1,2}\\/\\d{1,2}\\/\\d{4})';
@@ -2481,6 +2486,30 @@ function parseHotelConfirmation(text){
 
   if(hn&&!r.name) r.name=hn;
 
+  // 飯店地址解析
+  var addrM=
+    t.match(/(?:hotel\s*address|property\s*address|address)\s*[：:\n]\s*([^\n]{8,120})/i) ||
+    t.match(/(?:地址|住址)\s*[：:]\s*([^\n]{5,100})/i) ||
+    t.match(/Address\s*[：:]\s*[^：:\n]+[：:]\s*([^\n]{5,100})/i); // Agoda 單行
+  if(addrM){
+    var addrRaw=addrM[1].trim().replace(/^[：:]\s*/,'');
+    // 排除明顯非地址的文字
+    if(addrRaw.length>=5&&!/^(?:see\s|please\s|click\s|www\.|http)/i.test(addrRaw))
+      r.addr=addrRaw;
+  }
+  // 若地址是 Agoda 多行格式 "Address:\n地址\n實際地址"
+  if(!r.addr){
+    var adM2=t.match(/Address\s*[：:][^\n]*\n[^\n]*\n\s*([^\n]{5,100})/i);
+    if(adM2&&!/^(?:check|arrival|departure|booking|bed)/i.test(adM2[1]))
+      r.addr=adM2[1].trim();
+  }
+
+  // 飯店電話解析
+  var telM=
+    t.match(/(?:tel(?:ephone)?|phone|contact(?:\s*no)?)\s*[：:]\s*([\+\d\s\-\(\)]{6,25})/i) ||
+    t.match(/(?:電話|聯絡電話)\s*[：:]\s*([\+\d\s\-\(\)]{6,25})/i);
+  if(telM) r.phone=telM[1].trim();
+
   return r;
 }
 
@@ -2580,6 +2609,8 @@ function applyHotelConfirmation(tripId){
   if(parsed.price)    trip.hotel.price=parsed.price;
   if(parsed.currency) trip.hotel.currency=parsed.currency;
   if(parsed.ref)      trip.hotel.ref=parsed.ref;
+  if(parsed.addr)     trip.hotel.addr=parsed.addr;
+  if(parsed.phone)    trip.hotel.phone=parsed.phone;
   trip.hotel.booked=true;
   saveTrips();
   _pendingHotelData=null;
