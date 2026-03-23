@@ -5107,37 +5107,54 @@ function signInWithGoogle(){
 
 function _fbLoginSuccess(user){
   if(!user) return;
-  // 白名單檢查
-  if(!_isAllowedEmail(user.email)){
-    _fbAuth.signOut();
-    // 在登入頁面顯示被拒絕的 email，方便確認與修正白名單
-    setTimeout(function(){
-      var errEl=document.getElementById('l-err');
-      if(errEl){
-        errEl.textContent='⛔ 此帳號無權限：'+user.email;
-        errEl.style.display='block';
-      }
-    },400);
-    return;
+
+  // ── 內部：白名單確認後的真正登入邏輯 ──
+  function _doLogin(){
+    if(!_isAllowedEmail(user.email)){
+      _fbAuth.signOut();
+      setTimeout(function(){
+        var errEl=document.getElementById('l-err');
+        if(errEl){
+          errEl.textContent='⛔ 此帳號無權限：'+user.email;
+          errEl.style.display='block';
+        }
+      },400);
+      return;
+    }
+    _fbUser=user;
+    localStorage.setItem(AUTH_KEY,user.displayName||user.email);
+    localStorage.setItem(AUTH_ROLE_KEY,'admin');
+    toast('👋 歡迎，'+(user.displayName||user.email)+'！資料同步中…');
+    var ls=document.getElementById('ls');
+    var lsVisible=ls&&window.getComputedStyle(ls).display!=='none';
+    if(lsVisible){
+      ls.style.transition='opacity .3s';ls.style.opacity='0';
+      setTimeout(function(){
+        ls.style.display='none';
+        updateAdminBtn();
+        try{renderDash();}catch(e){console.error('renderDash:',e);}
+        try{_startFsSync();}catch(e){console.error('startFsSync:',e);}
+      },300);
+    } else {
+      try{_startFsSync();}catch(e){}
+      try{renderDash();}catch(e){}
+    }
   }
-  _fbUser=user;
-  localStorage.setItem(AUTH_KEY,user.displayName||user.email);
-  localStorage.setItem(AUTH_ROLE_KEY,'admin');
-  toast('👋 歡迎，'+(user.displayName||user.email)+'！資料同步中…');
-  var ls=document.getElementById('ls');
-  // 用 computedStyle 確保偵測到實際顯示狀態
-  var lsVisible=ls&&window.getComputedStyle(ls).display!=='none';
-  if(lsVisible){
-    ls.style.transition='opacity .3s';ls.style.opacity='0';
-    setTimeout(function(){
-      ls.style.display='none';
-      updateAdminBtn();
-      try{renderDash();}catch(e){console.error('renderDash:',e);}
-      try{_startFsSync();}catch(e){console.error('startFsSync:',e);}
-    },300);
+
+  // ── 先從 Firestore 拉取最新白名單，解決新裝置 localStorage 尚未同步的問題 ──
+  if(_fbDb){
+    _configDoc().get().then(function(doc){
+      if(doc.exists&&doc.data().allowedEmails){
+        // 用伺服器名單覆蓋本機，確保最新
+        localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(doc.data().allowedEmails));
+      }
+      _doLogin();
+    }).catch(function(){
+      // Firestore 無法存取時，回退到 localStorage（含預設值）
+      _doLogin();
+    });
   } else {
-    try{_startFsSync();}catch(e){}
-    try{renderDash();}catch(e){}
+    _doLogin();
   }
 }
 
