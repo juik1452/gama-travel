@@ -5125,25 +5125,32 @@ function signInWithGoogle(){
 
 function _fbLoginSuccess(user){
   if(!user) return;
-  // 防止重複觸發（_loginPending 用同步 flag，解決非同步 guard 失效問題）
   if(_loginPending) return;
   if(_fbUser&&_fbUser.uid===user.uid) return;
   _loginPending=true;
 
+  // 顯示驗證中提示
+  var _lErr=document.getElementById('l-err');
+  function _showLoading(){
+    if(_lErr){_lErr.textContent='⏳ 正在驗證授權，請稍候…';_lErr.style.cssText='display:block;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.9);border-color:rgba(255,255,255,0.3)';}
+  }
+  function _hideLoading(){
+    if(_lErr){_lErr.style.cssText='';_lErr.style.display='none';}
+  }
+  _showLoading();
+
   // ── 白名單確認後的真正登入邏輯 ──
   function _doLogin(){
-    _loginPending=false; // 釋放 flag
+    _loginPending=false;
     if(!_isAllowedEmail(user.email)){
+      _hideLoading();
       _fbAuth.signOut();
       setTimeout(function(){
-        var errEl=document.getElementById('l-err');
-        if(errEl){
-          errEl.textContent='⛔ 此帳號無權限：'+user.email;
-          errEl.style.display='block';
-        }
+        if(_lErr){_lErr.style.cssText='';_lErr.textContent='⛔ 此帳號無權限：'+user.email;_lErr.style.display='block';}
       },400);
       return;
     }
+    _hideLoading();
     _fbUser=user;
     localStorage.setItem(AUTH_KEY,user.displayName||user.email);
     localStorage.setItem(AUTH_ROLE_KEY,'admin');
@@ -5164,25 +5171,26 @@ function _fbLoginSuccess(user){
     }
   }
 
-  // ── 先從 Firestore 拉取最新白名單，再做驗證 ──
-  // 用單一 helper 確保最終只呼叫一次 _doLogin()
+  // ── 強制刷新 token 後再讀 Firestore，避免手機 redirect 後 token 尚未傳遞給 Firestore ──
   function _fetchWhitelistThenLogin(){
-    _fsDoc().get().then(function(doc){
-      // 優先：sync doc（行程同一文件，一定可存取）
+    user.getIdToken(true).then(function(){
+      // token 已刷新，Firestore 認證就緒，讀 sync doc
+      return _fsDoc().get();
+    }).then(function(doc){
       if(doc.exists&&doc.data().allowedEmails&&doc.data().allowedEmails.length>0){
         localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(doc.data().allowedEmails));
         _doLogin();
       } else {
-        // 備援：config doc
+        // sync doc 無白名單 → 試 config doc
         _configDoc().get().then(function(cdoc){
           if(cdoc.exists&&cdoc.data().allowedEmails&&cdoc.data().allowedEmails.length>0){
             localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(cdoc.data().allowedEmails));
           }
           _doLogin();
-        }).catch(function(){_doLogin();}); // 都讀不到 → 用 localStorage 預設值
+        }).catch(function(){_doLogin();});
       }
     }).catch(function(){
-      // sync doc 失敗 → 試 config doc
+      // token 刷新或 sync doc 讀取失敗 → 改查 config doc
       _configDoc().get().then(function(cdoc){
         if(cdoc.exists&&cdoc.data().allowedEmails&&cdoc.data().allowedEmails.length>0){
           localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(cdoc.data().allowedEmails));
