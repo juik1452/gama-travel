@@ -4969,10 +4969,12 @@ function getAllowedEmails(){
 function _configDoc(){return _fbDb.collection('companies').doc('gama').collection('config').doc('settings');}
 function saveAllowedEmails(arr){
   localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(arr));
-  // 同步到 Firestore，讓所有裝置即時更新
   if(_fbDb&&_fbUser){
+    // 寫入 config doc（供監聽器即時通知）
     _configDoc().set({allowedEmails:arr,updatedAt:Date.now()},{merge:true})
-      .catch(function(e){console.warn('whitelist push error:',e);});
+      .catch(function(e){console.warn('whitelist config push error:',e);});
+    // 同時透過 _fsPush 寫入 sync doc（新裝置登入時可讀到白名單）
+    _fsPush();
   }
 }
 function _syncAllowedEmailsFromFs(){
@@ -5012,7 +5014,8 @@ function _fsPush(){
   if(!_fbDb||!_fbUser) return;
   var trips=MEM||lsGet('gama_trips')||[];
   var deletedIds=[].concat(Array.from?Array.from(_getDeletedIds()):[].slice.call(_getDeletedIds()));
-  _fsDoc().set({trips:trips,deletedIds:deletedIds,updatedAt:Date.now(),deviceId:_deviceId}).then(function(){
+  var allowedEmails=getAllowedEmails(); // 白名單一起推送，讓新裝置登入時可讀取
+  _fsDoc().set({trips:trips,deletedIds:deletedIds,updatedAt:Date.now(),deviceId:_deviceId,allowedEmails:allowedEmails}).then(function(){
     _syncStatus('✅ Firebase 即時同步中 · 所有裝置自動更新');
   }).catch(function(e){
     console.warn('Firestore push error:',e);
@@ -5022,6 +5025,12 @@ function _fsPush(){
 
 function _fsPull(data){
   if(!data||!data.trips) return;
+  // 同步白名單（若遠端有且非空）
+  if(data.allowedEmails&&data.allowedEmails.length>0){
+    localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(data.allowedEmails));
+    var amBody=document.getElementById('am-body');
+    if(amBody&&amBody.innerHTML.indexOf('白名單')>=0) renderAccountMgmt();
+  }
   var remote=data.trips;
   var remoteTombstones=new Set(data.deletedIds||[]);
   var local=lsGet('gama_trips')||[];
@@ -5151,17 +5160,30 @@ function _fbLoginSuccess(user){
     }
   }
 
-  // ── 先從 Firestore 拉取最新白名單，解決新裝置 localStorage 尚未同步的問題 ──
+  // ── 先從 Firestore 拉取最新白名單，再做驗證 ──
+  // 優先讀 sync doc（與行程同一文件，一定可存取），再查 config doc 作備援
   if(_fbDb){
-    _configDoc().get().then(function(doc){
-      if(doc.exists&&doc.data().allowedEmails){
-        // 用伺服器名單覆蓋本機，確保最新
+    _fsDoc().get().then(function(doc){
+      if(doc.exists&&doc.data().allowedEmails&&doc.data().allowedEmails.length>0){
         localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(doc.data().allowedEmails));
+        _doLogin();
+      } else {
+        // sync doc 沒有白名單 → 查 config doc
+        _configDoc().get().then(function(cdoc){
+          if(cdoc.exists&&cdoc.data().allowedEmails&&cdoc.data().allowedEmails.length>0){
+            localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(cdoc.data().allowedEmails));
+          }
+          _doLogin();
+        }).catch(function(){_doLogin();});
       }
-      _doLogin();
     }).catch(function(){
-      // Firestore 無法存取時，回退到 localStorage（含預設值）
-      _doLogin();
+      // Firestore 完全不可用時，嘗試 config doc 備援
+      _configDoc().get().then(function(cdoc){
+        if(cdoc.exists&&cdoc.data().allowedEmails&&cdoc.data().allowedEmails.length>0){
+          localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(cdoc.data().allowedEmails));
+        }
+        _doLogin();
+      }).catch(function(){_doLogin();});
     });
   } else {
     _doLogin();
