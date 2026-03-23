@@ -1644,16 +1644,34 @@ function go(id,doReset){
 // ═══════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════
+
+// 根據航班日期自動判斷行程狀態
+// 即將出發：出發日距今 ≤ 30 天（且尚未出發）
+// 進行中：出發日距今 > 30 天，或目前正在旅途中
+// 已完成：返回日已過今天
+function _autoStatus(trip){
+  var today=new Date(); today.setHours(0,0,0,0);
+  var in30=new Date(today); in30.setDate(in30.getDate()+30);
+  var outSegs=(trip.segs||[]).filter(function(s){return s.dir==='out';});
+  var inSegs=(trip.segs||[]).filter(function(s){return s.dir==='in';});
+  var depDate=outSegs.length?new Date(outSegs[0].dd):null;
+  var retDate=inSegs.length?new Date(inSegs[inSegs.length-1].ad||inSegs[inSegs.length-1].dd):null;
+  if(!depDate) return 'active';
+  if(retDate&&retDate<today) return 'past';          // 已回程 → 已完成
+  if(depDate>=today&&depDate<=in30) return 'upcoming'; // 30天內出發 → 即將出發
+  return 'active';                                   // 超過30天或正在旅途 → 進行中
+}
+
 function renderDash(){
   var trips=getTrips(),el=document.getElementById('dash');
-  var upcoming=trips.filter(function(t){return t.status==='upcoming';}).length;
-  var active=trips.filter(function(t){return t.status==='active';}).length;
-  var past=trips.filter(function(t){return t.status==='past';}).length;
+  var upcoming=trips.filter(function(t){return _autoStatus(t)==='upcoming';}).length;
+  var active=trips.filter(function(t){return _autoStatus(t)==='active';}).length;
+  var past=trips.filter(function(t){return _autoStatus(t)==='past';}).length;
   // Stats row
   var h='<div class="stats-row">'+
     '<div class="stat-card'+(upcoming>0?' stat-hi':'')+'"><div class="stat-num">'+upcoming+'</div><div class="stat-lbl">即將出發</div></div>'+
     '<div class="stat-card'+(active>0?' stat-hi':'')+'"><div class="stat-num">'+active+'</div><div class="stat-lbl">進行中</div></div>'+
-    '<div class="stat-card"><div class="stat-num">'+past+'</div><div class="stat-lbl">已結束</div></div>'+
+    '<div class="stat-card"><div class="stat-num">'+past+'</div><div class="stat-lbl">已完成</div></div>'+
   '</div>';
   if(!trips.length){
     h+='<div class="empty"><div class="empty-ico">✈️</div><h3>尚無出差紀錄</h3><p>點擊下方按鈕上傳機票<br>即可建立第一筆出差行程</p>'+
@@ -1666,9 +1684,10 @@ function renderDash(){
     var inb=[].concat(trip.segs).reverse().find(function(s){return s.dir==='in';});
     var names=trip.passengers.map(function(p){return p.name;}).join('、');
     var done=trip.todos.filter(function(t){return t.done;}).length;
-    var acc=trip.status==='upcoming'?'acc-up':trip.status==='active'?'acc-ac':'acc-ps';
-    var bl=trip.status==='upcoming'?'b-up':trip.status==='active'?'b-ac':'b-ps';
-    var bl2=trip.status==='upcoming'?'即將出發':trip.status==='active'?'進行中':'已結束';
+    var st=_autoStatus(trip);
+    var acc=st==='upcoming'?'acc-up':st==='active'?'acc-ac':'acc-ps';
+    var bl=st==='upcoming'?'b-up':st==='active'?'b-ac':'b-ps';
+    var bl2=st==='upcoming'?'即將出發':st==='active'?'進行中':'已完成';
     var todoBar=trip.todos.length?Math.round(done/trip.todos.length*100):0;
     h+='<div class="tc" onclick="openTrip(\''+trip.id+'\')">'+
       '<div class="tc-accent '+acc+'"></div>'+
