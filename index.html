@@ -2821,6 +2821,69 @@ function _tripDest(trip){
   }
   return _toEnDest(d)||'—';
 }
+function fetchHotelInfo(tripId){
+  var nameInp=document.getElementById('hotel-name-inp');
+  var hotelName=(nameInp?nameInp.value.trim():'');
+  if(!hotelName){toast('請先輸入或儲存飯店名稱');return;}
+  var trips=getTrips();
+  var trip=trips.find(function(t){return t.id===tripId;});
+  if(!trip) return;
+  // 先儲存飯店名稱
+  if(!trip.hotel) trip.hotel={};
+  trip.hotel.name=hotelName;
+  var city=_tripDest(trip)||'';
+  var q=hotelName+(city&&city!==hotelName?' '+city:'');
+  toast('🔍 查詢中…');
+  fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+
+    '&format=json&addressdetails=1&limit=5&accept-language=en',
+    {headers:{'Accept':'application/json'}})
+    .then(function(r){return r.json();})
+    .then(function(results){
+      if(!results||!results.length){toast('❌ 查不到「'+hotelName+'」，請確認名稱');return;}
+      // 優先找 tourism/hotel 類型，否則取第一筆
+      var best=results.find(function(r){return r.class==='tourism'&&(r.type==='hotel'||r.type==='hostel');})
+        ||results.find(function(r){return r.class==='tourism';})
+        ||results[0];
+      var addr=best.display_name||'';
+      var lat=parseFloat(best.lat),lon=parseFloat(best.lon);
+      function _applyAndSave(phone){
+        if(addr) trip.hotel.addr=addr;
+        if(phone) trip.hotel.phone=phone;
+        addOrUpdateTrip(trip);
+        rHotel(trip);
+        toast('✅ '+(addr?'地址':'')+(addr&&phone?'＆':'')+(phone?'電話':'')+' 已自動帶入'+(addr||phone?'':'查不到資料，請手動填寫'));
+      }
+      // 用 Overpass 嘗試抓電話（5 秒 timeout 保護）
+      var done=false;
+      var tmr=setTimeout(function(){if(!done){done=true;_applyAndSave('');}},5000);
+      var eName=hotelName.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      var ovQ='[out:json][timeout:8];(node["name"~"'+eName+'","i"]["tourism"~"hotel|hostel|motel"](around:400,'+lat+','+lon+');way["name"~"'+eName+'","i"]["tourism"~"hotel|hostel|motel"](around:400,'+lat+','+lon+'););out body;';
+      fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(ovQ))
+        .then(function(r2){return r2.json();})
+        .then(function(osm){
+          if(done) return; done=true; clearTimeout(tmr);
+          var phone='';
+          if(osm&&osm.elements&&osm.elements.length){
+            var el=osm.elements[0];
+            phone=(el.tags&&(el.tags.phone||el.tags['contact:phone']||el.tags['contact:telephone']||el.tags.telephone))||'';
+            // OSM 地址比 Nominatim 更乾淨時優先使用
+            if(el.tags&&el.tags['addr:street']){
+              var a=[];
+              if(el.tags['addr:housenumber']) a.push(el.tags['addr:housenumber']);
+              a.push(el.tags['addr:street']);
+              if(el.tags['addr:city']) a.push(el.tags['addr:city']);
+              if(el.tags['addr:postcode']) a.push(el.tags['addr:postcode']);
+              if(el.tags['addr:country']) a.push(el.tags['addr:country']);
+              if(a.length>=2) addr=a.join(', ');
+            }
+          }
+          _applyAndSave(phone);
+        })
+        .catch(function(){if(!done){done=true;clearTimeout(tmr);_applyAndSave('');}});
+    })
+    .catch(function(){toast('❌ 網路錯誤，請稍後再試');});
+}
+
 function saveHotelName(tripId){
   var val=(document.getElementById('hotel-name-inp').value||'').trim();
   if(!val){toast('請輸入飯店名稱');return;}
@@ -2860,12 +2923,17 @@ function rHotel(trip){
         'style="flex:1;border:1.5px solid rgba(255,255,255,0.25);border-radius:8px;padding:8px 12px;font-size:15px;font-weight:700;font-family:inherit;color:#fff;background:rgba(255,255,255,0.1);outline:none">'+
       '<button onclick="saveHotelName(\''+trip.id+'\')" '+
         'style="flex-shrink:0;padding:8px 14px;border-radius:8px;background:var(--pri);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">儲存</button>'+
+      '<button onclick="fetchHotelInfo(\''+trip.id+'\')" '+
+        'style="flex-shrink:0;padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.15);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">🔍 查詢</button>'+
     '</div>'+
     '<div class="hm">'+
     (h.cin?'<span>入住 '+h.cin+'</span>':'')+
     (h.cout?'<span>退房 '+h.cout+'</span>':'')+
     (h.nights?'<span>'+h.nights+' 晚</span>':'')+
     '</div>'+
+    (h.addr?'<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px;line-height:1.5">📍 '+escHtml(h.addr)+'</div>':'')+
+    (h.phone?'<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:3px">📞 '+escHtml(h.phone)+'</div>':'')+
+    (h.ref?'<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:3px">🔖 訂房編號：'+escHtml(h.ref)+'</div>':'')+
     '<div class="hs '+(h.booked?'ok':'ng')+'">'+(h.booked?'已確認訂房':'訂房進行中')+'</div>'+
     '</div>';
 
