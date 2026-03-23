@@ -5020,7 +5020,14 @@ function _fbLoginSuccess(user){
   // 白名單檢查
   if(!_isAllowedEmail(user.email)){
     _fbAuth.signOut();
-    toast('⛔ 此帳號（'+user.email+'）無存取權限，請聯繫管理員');
+    // 在登入頁面顯示被拒絕的 email，方便確認與修正白名單
+    setTimeout(function(){
+      var errEl=document.getElementById('l-err');
+      if(errEl){
+        errEl.textContent='⛔ 此帳號無權限：'+user.email;
+        errEl.style.display='block';
+      }
+    },400);
     return;
   }
   _fbUser=user;
