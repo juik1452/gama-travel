@@ -5088,6 +5088,14 @@ function signInWithGoogle(){
   if(!_fbAuth){try{_initFirebase();}catch(e){} if(!_fbAuth){toast('⚠️ 請重新整理頁面後再試');return;}}
   var provider=new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({prompt:'select_account'});
+  // 行動裝置改用 redirect（iOS/Android 常封鎖 popup）
+  var isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  if(isMobile){
+    _fbAuth.signInWithRedirect(provider).catch(function(err){
+      toast('⚠️ 登入失敗：'+err.message);
+    });
+    return;
+  }
   _fbAuth.signInWithPopup(provider)
     .then(function(result){
       // onAuthStateChanged 也會觸發，這裡做備援
@@ -5107,6 +5115,8 @@ function signInWithGoogle(){
 
 function _fbLoginSuccess(user){
   if(!user) return;
+  // 防止 onAuthStateChanged + getRedirectResult 雙重觸發
+  if(_fbUser&&_fbUser.uid===user.uid) return;
 
   // ── 內部：白名單確認後的真正登入邏輯 ──
   function _doLogin(){
@@ -5164,6 +5174,14 @@ function _initFirebase(){
   _fbApp=firebase.app();
   _fbAuth=firebase.auth();
   _fbDb=firebase.firestore();
+  // 處理行動裝置 redirect 登入結果
+  _fbAuth.getRedirectResult().then(function(result){
+    if(result&&result.user) _fbLoginSuccess(result.user);
+  }).catch(function(err){
+    if(err.code&&err.code!=='auth/no-current-user'){
+      console.warn('getRedirectResult error:',err.code,err.message);
+    }
+  });
   // 監聽登入狀態（含已登入的 session 自動恢復）
   _fbAuth.onAuthStateChanged(function(user){
     if(user){
