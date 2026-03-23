@@ -876,6 +876,34 @@ function renderAccountMgmt(){
   h+='<button class="bs bp" style="display:flex;align-items:center;justify-content:center;gap:6px" onclick="doAddAccount()">'+icn('person',15,'#fff')+'新增帳號</button>';
   h+='</div></div>';
   h+='</div>';
+  // Gmail 白名單管理
+  var allowedEmails=getAllowedEmails();
+  h+='<div class="card" style="margin-top:18px">';
+  h+='<div class="ctitle" style="margin-bottom:10px">🔒 Google 登入白名單</div>';
+  h+='<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:12px">只有以下 Gmail 帳號可以登入本系統</div>';
+  if(allowedEmails.length){
+    h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">';
+    allowedEmails.forEach(function(em,i){
+      var isCurrent=_fbUser&&_fbUser.email&&_fbUser.email.toLowerCase()===em.toLowerCase();
+      h+='<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px">'+
+        '<span style="flex:1;font-size:13px;font-weight:600;color:#fff">'+escHtml(em)+
+          (isCurrent?'<span style="font-size:10px;background:rgba(74,222,128,0.2);color:#4ade80;border-radius:4px;padding:1px 5px;margin-left:6px">目前登入</span>':'')+
+        '</span>'+
+        (!isCurrent?'<button onclick="doRemoveAllowedEmail('+i+')" style="flex-shrink:0;padding:4px 10px;border-radius:6px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);font-size:12px;cursor:pointer">移除</button>':
+          '<span style="font-size:11px;color:rgba(255,255,255,0.3)">（登入中，無法移除）</span>')+
+      '</div>';
+    });
+    h+='</div>';
+  } else {
+    h+='<div style="font-size:13px;color:rgba(255,165,0,0.8);margin-bottom:12px">⚠️ 白名單為空，任何人都可以登入</div>';
+  }
+  h+='<div style="display:flex;gap:8px">'+
+    '<input id="am-new-email" type="email" placeholder="輸入 Gmail 地址" '+
+      'style="flex:1;border:1.5px solid rgba(255,255,255,0.25);border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;color:#fff;background:rgba(255,255,255,0.1);outline:none">'+
+    '<button onclick="doAddAllowedEmail()" style="flex-shrink:0;padding:8px 16px;border-radius:8px;background:var(--pri);color:#fff;font-size:13px;font-weight:700;border:none;cursor:pointer">新增</button>'+
+  '</div>';
+  h+='</div>';
+
   // 危險區：清除資料
   h+='<div class="card" style="margin-top:18px;border:1.5px solid #fee2e2">';
   h+='<div style="font-weight:800;color:#dc2626;margin-bottom:10px;font-size:14px">⚠️ 危險區</div>';
@@ -884,6 +912,28 @@ function renderAccountMgmt(){
   h+='</div>';
   document.getElementById('am-body').innerHTML=h;
 }
+function doAddAllowedEmail(){
+  var inp=document.getElementById('am-new-email');
+  var email=(inp?inp.value:'').trim().toLowerCase();
+  if(!email){toast('請輸入 Gmail 地址');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('❌ 格式不正確，請輸入完整 email');return;}
+  var list=getAllowedEmails();
+  if(list.some(function(e){return e.toLowerCase()===email;})){toast('此 email 已在名單中');return;}
+  list.push(email);
+  saveAllowedEmails(list);
+  toast('✅ 已新增：'+email);
+  renderAccountMgmt();
+}
+function doRemoveAllowedEmail(idx){
+  var list=getAllowedEmails();
+  var removed=list[idx];
+  if(!removed) return;
+  list.splice(idx,1);
+  saveAllowedEmails(list);
+  toast('已移除：'+removed);
+  renderAccountMgmt();
+}
+
 function clearAllTrips(){
   if(!confirm('確定要清除所有行程資料？\n此操作無法復原！')) return;
   localStorage.removeItem('gama_trips');
@@ -4904,15 +4954,23 @@ var _deviceId=(function(){
   return id;
 })();
 
-// ── Gmail 白名單：只有以下帳號可以登入 ──────────────────────
-var ALLOWED_EMAILS=[
-  'gama.affair@gmail.com',
-  'reneecchiu123@gmail.com',
-];
+// ── Gmail 白名單（存於 localStorage，可在設定頁動態管理）──
+var _DEFAULT_ALLOWED_EMAILS=['gama.affair@gmail.com','reneecchiu123@gmail.com'];
+var ALLOWED_EMAILS_KEY='gama_allowed_emails';
+function getAllowedEmails(){
+  try{
+    var stored=localStorage.getItem(ALLOWED_EMAILS_KEY);
+    if(stored) return JSON.parse(stored);
+  }catch(e){}
+  // 首次使用：寫入預設值
+  localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(_DEFAULT_ALLOWED_EMAILS));
+  return _DEFAULT_ALLOWED_EMAILS.slice();
+}
+function saveAllowedEmails(arr){localStorage.setItem(ALLOWED_EMAILS_KEY,JSON.stringify(arr));}
 function _isAllowedEmail(email){
   if(!email) return false;
   var e=email.toLowerCase().trim();
-  return ALLOWED_EMAILS.some(function(a){return a.toLowerCase().trim()===e;});
+  return getAllowedEmails().some(function(a){return a.toLowerCase().trim()===e;});
 }
 // ────────────────────────────────────────────────────────────
 
