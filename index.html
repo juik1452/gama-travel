@@ -2104,28 +2104,65 @@ function fmtExpEn(d){
   try{var dt=new Date(d);return ('0'+dt.getDate()).slice(-2)+'/'+mn[dt.getMonth()]+'/'+dt.getFullYear();}catch{return d||'';}
 }
 function buildVisaEn(p,trip){
-  // 從員工DB補齊資料（護照、住址等）
   var emp=mergeEmpData(p);
   var addrEn=p.addrEn||emp.addrEn||'';
-  var addr=addrEn||(p.addr||emp.addr||'');  // 優先用英文地址，沒有才用中文
+  var addr=addrEn||(p.addr||emp.addr||'');
   var n=parseEnName(p.nameEn||emp.nameEn||'');
   var segs2=trip.segs||[];
   var out=segs2.find(function(s){return s.dir==='out';});
   var inb=[].concat(segs2).reverse().find(function(s){return s.dir==='in';});
+  var hotel=trip.hotel||{};
+  var hotelName=(hotel.name&&hotel.name!=='尚未設定')?hotel.name:'';
+  var nights=hotel.nights?hotel.nights+' NIGHT'+(hotel.nights>1?'S':''):'';
+  var dobFmt=emp.dob?fmtExpEn(emp.dob):'';
   return [
-    'FAMILY NAME (SURNAME)  : '+n.last,
-    'GIVEN NAME (FIRST NAME): '+n.first,
-    'GENDER                 : '+n.gender,
-    'PASSPORT NUMBER        : '+(p.pp||''),
-    'PASSPORT EXPIRY DATE   : '+fmtExpEn(p.ppExp),
-    'NATIONALITY            : TAIWAN (ROC)',
-    'EMPLOYER               : GAMA TECHNOLOGY CO., LTD.',
-    'PURPOSE OF VISIT       : BUSINESS / CONFERENCE',
-    'INBOUND FLIGHT         : '+(out?out.fl+' '+out.dd:''),
-    'OUTBOUND FLIGHT        : '+(inb?inb.fl+' '+inb.dd:''),
-    'DESTINATION            : '+(trip.destination||''),
-    'PURPOSE OF VISIT       : '+(trip.purpose||trip.event||'BUSINESS'),
-    'HOME ADDRESS           : '+addr,
+    '── PERSONAL INFORMATION ─────────────────────────────',
+    'FAMILY NAME (SURNAME)       : '+n.last,
+    'GIVEN NAME (FIRST NAME)     : '+n.first,
+    'OTHER NAME / ALIAS          : ',
+    'DATE OF BIRTH               : '+dobFmt,
+    'PLACE OF BIRTH (CITY)       : '+(emp.pob||'TAIWAN'),
+    'PLACE OF BIRTH (COUNTRY)    : TAIWAN',
+    'GENDER                      : '+n.gender,
+    'MARITAL STATUS              : '+(emp.marital||''),
+    'NATIONALITY                 : TAIWAN (ROC)',
+    'NATIONAL ID NUMBER          : '+emp.idNum,
+    '',
+    '── TRAVEL DOCUMENT ──────────────────────────────────',
+    'PASSPORT NUMBER             : '+(emp.pp||''),
+    'PASSPORT EXPIRY DATE        : '+fmtExpEn(emp.ppExp||''),
+    'PASSPORT ISSUE DATE         : ',
+    'PASSPORT ISSUED AT (COUNTRY): TAIWAN',
+    '',
+    '── EMPLOYMENT ───────────────────────────────────────',
+    'OCCUPATION / JOB TITLE      : '+(emp.title||''),
+    'EMPLOYER NAME               : GAMA TECHNOLOGY CO., LTD.',
+    'EMPLOYER ADDRESS            : ',
+    'EMPLOYER PHONE              : ',
+    '',
+    '── CONTACT ──────────────────────────────────────────',
+    'HOME ADDRESS (ENGLISH)      : '+addr,
+    'EMAIL ADDRESS               : '+emp.email,
+    'MOBILE PHONE                : '+emp.phone,
+    '',
+    '── EMERGENCY CONTACT ────────────────────────────────',
+    'EMERGENCY CONTACT NAME      : '+emp.emergencyName,
+    'EMERGENCY CONTACT PHONE     : '+emp.emergencyPhone,
+    'EMERGENCY CONTACT RELATION  : ',
+    '',
+    '── TRAVEL DETAILS ───────────────────────────────────',
+    'PURPOSE OF VISIT            : '+(trip.purpose||trip.event||'BUSINESS'),
+    'DESTINATION COUNTRY         : '+(trip.destination||''),
+    'INBOUND FLIGHT NO.          : '+(out?out.fl+' ('+out.dd+')':''),
+    'OUTBOUND FLIGHT NO.         : '+(inb?inb.fl+' ('+inb.dd+')':''),
+    'DURATION OF STAY            : '+nights,
+    'ACCOMMODATION NAME          : '+hotelName,
+    'ACCOMMODATION ADDRESS       : ',
+    'ACCOMMODATION CHECK-IN      : '+(hotel.cin||''),
+    'ACCOMMODATION CHECK-OUT     : '+(hotel.cout||''),
+    'FUNDS AVAILABLE (USD)       : ',
+    'PREVIOUS VISITS             : ',
+    'TRAVEL INSURANCE            : ',
   ].join('\n');
 }
 function _visaCard(country,isTransit){
@@ -3185,17 +3222,35 @@ function applyEmpRows(rows,tripForRefresh){
     var name=(col[0]||'').trim();
     if(!name||name.charAt(0)==='<'||name.charAt(0)==='!') return;
     // A(0)=中文姓名 E(4)=英文姓名 F(5)=護照號碼 H(7)=護照截止 I(8)=行動電話 J(9)=住家地址
+    // K(10)=身分證號 L(11)=生日 M(12)=出生地 N(13)=職稱 O(14)=電子郵件
+    // P(15)=婚姻狀況 Q(16)=緊急聯絡人姓名 R(17)=緊急聯絡人電話
     var nameEn=(col[4]||'').trim();
     var pp=(col[5]||'').trim();
     var ppExp=(col[7]||'').trim().replace(/\//g,'-');
     var phone=(col[8]||'').trim();
     var addr=(col[9]||'').trim();
+    var idNum=(col[10]||'').trim();
+    var dob=(col[11]||'').trim().replace(/\//g,'-');
+    var pob=(col[12]||'').trim();
+    var title=(col[13]||'').trim();
+    var email=(col[14]||'').trim();
+    var marital=(col[15]||'').trim();
+    var emergencyName=(col[16]||'').trim();
+    var emergencyPhone=(col[17]||'').trim();
     if(!db[name]) db[name]={name:name};
-    if(nameEn) db[name].nameEn=nameEn;
-    if(pp)     db[name].pp=pp;
-    if(ppExp)  db[name].ppExp=ppExp;
-    if(phone)  db[name].phone=phone;
-    if(addr)   db[name].addr=addr;
+    if(nameEn)        db[name].nameEn=nameEn;
+    if(pp)            db[name].pp=pp;
+    if(ppExp)         db[name].ppExp=ppExp;
+    if(phone)         db[name].phone=phone;
+    if(addr)          db[name].addr=addr;
+    if(idNum)         db[name].idNum=idNum;
+    if(dob)           db[name].dob=dob;
+    if(pob)           db[name].pob=pob;
+    if(title)         db[name].title=title;
+    if(email)         db[name].email=email;
+    if(marital)       db[name].marital=marital;
+    if(emergencyName) db[name].emergencyName=emergencyName;
+    if(emergencyPhone)db[name].emergencyPhone=emergencyPhone;
     updated++;
   });
   if(updated===0) return 0;
@@ -3370,15 +3425,22 @@ function lookupEmpByEnName(nameStr){
 }
 function mergeEmpData(p){
   var db=getEmpDB();
-  // 先嘗試中文名直接比對
   var e=db[p.name]||null;
-  // 若找不到（p.name 為英文），再以英文名模糊比對
   if(!e) e=lookupEmpByEnName(p.name)||lookupEmpByEnName(p.nameEn)||{};
   return {
-    name:p.name,nameEn:p.nameEn||e.nameEn||'',ticket:p.ticket||'',
-    pp:p.pp||e.pp||'',ppExp:p.ppExp||e.ppExp||'',
-    phone:p.phone||e.phone||'',addr:p.addr||e.addr||'',
-    addrEn:p.addrEn||e.addrEn||''
+    name:p.name, nameEn:p.nameEn||e.nameEn||'', ticket:p.ticket||'',
+    pp:p.pp||e.pp||'', ppExp:p.ppExp||e.ppExp||'',
+    phone:p.phone||e.phone||'', addr:p.addr||e.addr||'',
+    addrEn:p.addrEn||e.addrEn||'',
+    // 簽證擴充欄位
+    idNum:p.idNum||e.idNum||'',        // 身分證號
+    dob:p.dob||e.dob||'',             // 生日 YYYY-MM-DD
+    pob:e.pob||'TAIWAN',              // 出生地
+    title:e.title||'',                // 職稱
+    email:e.email||'',                // 電子郵件
+    marital:e.marital||'',            // 婚姻狀況
+    emergencyName:e.emergencyName||'', // 緊急聯絡人姓名
+    emergencyPhone:e.emergencyPhone||'' // 緊急聯絡人電話
   };
 }
 
