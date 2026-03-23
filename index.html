@@ -2267,6 +2267,109 @@ function rVisa(trip){
       '<pre class="en-data" id="'+enId+'">'+enData+'</pre></div>'+
       '</div></div>';
   });
+  // ── 簽證申請常用詞彙中英對照表 ──────────────────
+  var VISA_GLOSSARY=[
+    {zh:'── 個人基本資料 ──────────────────────────',en:'── PERSONAL INFORMATION ────────────────────'},
+    {zh:'姓（姓氏）',en:'Surname / Family Name / Last Name'},
+    {zh:'名（名字）',en:'Given Name / First Name'},
+    {zh:'全名',en:'Full Name'},
+    {zh:'別名 / 曾用名',en:'Alias / Other Name / Also Known As'},
+    {zh:'生日 / 出生日期',en:'Date of Birth (DOB)'},
+    {zh:'出生地（城市）',en:'Place of Birth (City)'},
+    {zh:'出生國',en:'Country of Birth'},
+    {zh:'性別',en:'Gender / Sex'},
+    {zh:'男',en:'Male'},
+    {zh:'女',en:'Female'},
+    {zh:'國籍',en:'Nationality / Citizenship'},
+    {zh:'身分證號碼',en:'National ID Number / ID Card Number'},
+    {zh:'統一編號',en:'Unified National ID'},
+    {zh:'婚姻狀況',en:'Marital Status'},
+    {zh:'未婚',en:'Single'},
+    {zh:'已婚',en:'Married'},
+    {zh:'離婚',en:'Divorced'},
+    {zh:'喪偶',en:'Widowed'},
+    {zh:'身高',en:'Height (cm)'},
+    {zh:'體重',en:'Weight (kg)'},
+    {zh:'血型',en:'Blood Type'},
+    {zh:'宗教',en:'Religion'},
+    {zh:'民族 / 種族',en:'Ethnicity / Race'},
+    {zh:'父親全名',en:"Father's Full Name"},
+    {zh:'母親全名',en:"Mother's Full Name / Maiden Name"},
+    {zh:'── 旅行證件 ──────────────────────────────',en:'── TRAVEL DOCUMENT ─────────────────────────'},
+    {zh:'護照號碼',en:'Passport Number'},
+    {zh:'護照類別',en:'Passport Type'},
+    {zh:'普通護照',en:'Ordinary / Regular Passport'},
+    {zh:'護照核發日期',en:'Date of Issue / Issue Date'},
+    {zh:'護照到期日',en:'Date of Expiry / Expiry Date'},
+    {zh:'護照核發地 / 核發機關',en:'Place of Issue / Issuing Authority'},
+    {zh:'── 職業 / 雇主 ──────────────────────────',en:'── OCCUPATION / EMPLOYER ───────────────────'},
+    {zh:'職業 / 職稱',en:'Occupation / Job Title'},
+    {zh:'公司名稱 / 雇主',en:'Employer Name / Company Name'},
+    {zh:'公司地址',en:'Employer Address / Company Address'},
+    {zh:'公司電話',en:'Employer Phone / Company Phone'},
+    {zh:'任職年資',en:'Years Employed / Duration of Employment'},
+    {zh:'月收入',en:'Monthly Income'},
+    {zh:'── 聯絡資訊 ──────────────────────────────',en:'── CONTACT INFORMATION ─────────────────────'},
+    {zh:'住家地址',en:'Home Address / Residential Address'},
+    {zh:'電子郵件',en:'Email Address'},
+    {zh:'手機號碼',en:'Mobile Phone / Cell Phone'},
+    {zh:'市話',en:'Home Phone / Landline'},
+    {zh:'── 緊急聯絡人 ────────────────────────────',en:'── EMERGENCY CONTACT ───────────────────────'},
+    {zh:'緊急聯絡人姓名',en:'Emergency Contact Name'},
+    {zh:'緊急聯絡人電話',en:'Emergency Contact Phone'},
+    {zh:'與緊急聯絡人關係',en:'Relationship to Emergency Contact'},
+    {zh:'配偶',en:'Spouse'},
+    {zh:'父母',en:'Parent'},
+    {zh:'子女',en:'Child / Son / Daughter'},
+    {zh:'兄弟姊妹',en:'Sibling / Brother / Sister'},
+    {zh:'朋友',en:'Friend'},
+    {zh:'── 行程資訊 ──────────────────────────────',en:'── TRAVEL DETAILS ──────────────────────────'},
+    {zh:'造訪目的',en:'Purpose of Visit / Reason for Travel'},
+    {zh:'商務',en:'Business'},
+    {zh:'觀光 / 旅遊',en:'Tourism / Leisure'},
+    {zh:'會議 / 展覽',en:'Conference / Exhibition'},
+    {zh:'目的地國家',en:'Destination Country'},
+    {zh:'預計抵達日期',en:'Intended Date of Arrival / Entry Date'},
+    {zh:'預計離境日期',en:'Intended Date of Departure / Exit Date'},
+    {zh:'停留天數',en:'Duration of Stay / Length of Stay'},
+    {zh:'入境航班號',en:'Flight Number (Inbound)'},
+    {zh:'離境航班號',en:'Flight Number (Outbound)'},
+    {zh:'曾否前往此國',en:'Previous Visits to This Country'},
+    {zh:'過去五年訪問紀錄',en:'Travel History (Past 5 Years)'},
+    {zh:'── 住宿資訊 ──────────────────────────────',en:'── ACCOMMODATION ───────────────────────────'},
+    {zh:'住宿名稱',en:'Accommodation Name / Hotel Name'},
+    {zh:'住宿地址',en:'Accommodation Address'},
+    {zh:'住宿電話',en:'Accommodation Phone'},
+    {zh:'入住日期',en:'Check-In Date'},
+    {zh:'退房日期',en:'Check-Out Date'},
+    {zh:'訂房確認編號',en:'Booking Confirmation Number / Reservation Number'},
+    {zh:'── 財力 / 其他 ──────────────────────────',en:'── FINANCES / OTHER ────────────────────────'},
+    {zh:'可用資金（美元）',en:'Funds Available (USD)'},
+    {zh:'旅遊保險',en:'Travel Insurance'},
+    {zh:'保險公司',en:'Insurance Company'},
+    {zh:'保單號碼',en:'Policy Number'},
+    {zh:'簽證類別',en:'Visa Type / Visa Category'},
+    {zh:'單次入境',en:'Single Entry'},
+    {zh:'多次入境',en:'Multiple Entry'},
+    {zh:'是否持有其他護照',en:'Do You Hold Any Other Passport?'},
+    {zh:'是否曾被拒絕入境或驅逐',en:'Have You Ever Been Refused Entry or Deported?'},
+    {zh:'是否有犯罪紀錄',en:'Do You Have a Criminal Record?'},
+  ];
+  h+='<div class="card" style="margin-top:14px">'+
+    '<div class="ctitle" style="margin-bottom:10px">📋 簽證申請常用詞彙中英對照</div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+    '<tr style="border-bottom:2px solid rgba(255,255,255,0.2)"><th style="text-align:left;padding:4px 8px;color:rgba(255,255,255,0.5);font-weight:600">中文</th><th style="text-align:left;padding:4px 8px;color:rgba(255,255,255,0.5);font-weight:600">English</th></tr>'+
+    VISA_GLOSSARY.map(function(row){
+      var isHeader=/^──/.test(row.zh);
+      return isHeader
+        ? '<tr><td colspan="2" style="padding:10px 8px 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.05em">'+row.zh+'</td></tr>'
+        : '<tr style="border-bottom:1px solid rgba(255,255,255,0.06)">'+
+          '<td style="padding:5px 8px;color:rgba(255,255,255,0.85)">'+row.zh+'</td>'+
+          '<td style="padding:5px 8px;color:rgba(255,255,255,0.7);font-style:italic">'+row.en+'</td>'+
+          '</tr>';
+    }).join('')+
+    '</table></div>';
+
   document.getElementById('tv').innerHTML=h;
   // 自動翻譯：有中文地址但無英文地址的旅客
   trip.passengers.forEach(function(p){
@@ -2621,6 +2724,7 @@ function applyHotelConfirmation(tripId){
   }
   toast('✅ 訂房資料已匯入：'+(parsed.name||'確認單'));
   rHotel(trip);
+  rVisa(trip); // 同步更新簽證頁面飯店資訊
 }
 
 // ═══════════════════════════════════════
@@ -2851,7 +2955,8 @@ function fetchHotelInfo(tripId){
         if(phone) trip.hotel.phone=phone;
         addOrUpdateTrip(trip);
         rHotel(trip);
-        toast('✅ '+(addr?'地址':'')+(addr&&phone?'＆':'')+(phone?'電話':'')+' 已自動帶入'+(addr||phone?'':'查不到資料，請手動填寫'));
+        rVisa(trip); // 同步更新簽證頁面
+        toast('✅ '+(addr?'地址':'')+(addr&&phone?'＆':'')+(phone?'電話':'')+' 已自動帶入簽證頁面'+(addr||phone?'':'，查不到資料請手動填寫'));
       }
       // 用 Overpass 嘗試抓電話（5 秒 timeout 保護）
       var done=false;
